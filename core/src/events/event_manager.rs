@@ -257,6 +257,6 @@ impl EventManager {
         }
 
         // Send the canvas to the GPU to draw
-        canvas.flush();
+        canvas.flush(None);
     }
 }

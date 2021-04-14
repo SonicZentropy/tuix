@@ -14,4 +14,6 @@ tuix_core = { path = "../core" }
 baseview = { git = "https://github.com/RustAudio/baseview.git"}
 keyboard-types = { version = "0.5", default-features = false }
 raw-window-handle = "0.3"
-femtovg = { git = "https://github.com/femtovg/femtovg", branch = "master", default-features = false }
+#femtovg = { git = "https://github.com/femtovg/femtovg", branch = "master", default-features = false }
+#femtovg = { path = "../../femtovg", default-features = false }
+femtovg = { git = "https://github.com/adamnemecek/femtovg", branch = "master"}

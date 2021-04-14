@@ -1,0 +1,19 @@
+[package]
+name = "tuix_wgpu"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+#from femtovg's dependencies, otherwise you get a semver mismatch
+wgpu = { git = "https://github.com/gfx-rs/wgpu-rs/" , rev = "82b7068498864de44bbdf3e02d086c03d83a04e0" }
+# This is personal fork, change to otherwise once wgpu lands
+femtovg = { git = "https://github.com/adamnemecek/femtovg", branch = "master"}
+#femtovg = { path="../../femtovg" }
+keyboard-types = { version = "0.5", default-features = false }
+tuix_core = { path = "../core" }
+winit = "0.24.0"
+#wasm-bindgen = "0.2.73"
+log = "0.4.14"
+env_logger = "0.8.3"
+resource = "0.5.0"
+pollster = "0.2.3"

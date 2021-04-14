@@ -6,7 +6,7 @@ use tuix::*;
 
 fn main() {
     // Create the app
-    let app = Application::new(|state, window| {
+    let app = tuix_wgpu::application::Application::new(|state, window| {
         match state.add_stylesheet("examples/themes/basic_theme.css") {
             Ok(_) => {}
             Err(e) => println!("Error loading stylesheet: {}", e),
@@ -118,8 +118,8 @@ fn main() {
         //let inner = Element::new().build(state, outer, |builder| builder.class("inner2"));
         // let _innerinner = Element::new().build(state, outer, |builder| builder.class("inner2"));
 
-       
+
     });
 
-    app.run();
+    pollster::block_on(app.run());
 }
