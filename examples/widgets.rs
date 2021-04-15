@@ -4,6 +4,11 @@ extern crate tuix;
 
 use tuix::*;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 use tuix::style::themes::DEFAULT_THEME;
 
 static THEME: &'static str = include_str!("themes/widgets_theme.css");

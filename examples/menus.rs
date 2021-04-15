@@ -4,6 +4,11 @@ use tuix::*;
 
 use tuix::widgets::Button;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 static THEME: &'static str = include_str!("themes/menus_theme.css");
 
 // #[derive(Clone, Debug)]
@@ -189,7 +194,7 @@ fn main() {
         //         .set_background_color(Color::rgb(50, 50, 50))
         // });
 
-        
+
     });
 
     app.run();

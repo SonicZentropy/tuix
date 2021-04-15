@@ -1,8 +1,13 @@
 use tuix::*;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 fn main() {
     let app = Application::new(|state, window| {
-        
+
         window.set_title("Custom Title").set_inner_size(300,300);
 
         // Create a shared style wich applies to all widgets with class name "my_class"
@@ -16,7 +21,7 @@ fn main() {
 
         state.style.layout_type.insert(window.entity(), LayoutType::Vertical);
 
-        let container = Element::new().build(state, window.entity(), |builder| 
+        let container = Element::new().build(state, window.entity(), |builder|
             builder
                 .set_width(Pixels(100.0))
                 .set_left(Stretch(1.0))
@@ -28,7 +33,7 @@ fn main() {
         );
 
         // Add a Button widget as a child of the Element widget
-        Button::new().build(state, container, |builder| 
+        Button::new().build(state, container, |builder|
             builder
                 .set_width(Pixels(30.0))
                 .set_background_color(Color::rgb(20,80,200))
@@ -45,12 +50,12 @@ fn main() {
 
 // fn main() {
 //     let app = Application::new(|state, window| {
-        
+
 //         window.set_title("Custom Title").set_inner_size(300,300);
 
 //         state.style.layout_type.insert(window.entity(), LayoutType::Vertical);
 
-//         Button::new().build(state, window.entity(), |builder| 
+//         Button::new().build(state, window.entity(), |builder|
 //             builder
 //                 .set_width(Units::Stretch(1.0))
 //                 .set_height(Units::Pixels(30.0))

@@ -1,4 +1,5 @@
-use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, apply_clipping, Fonts, Propagation, MouseButtonState, PropSet, Visibility, Display, apply_hover, MouseButton};
+use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget,
+                apply_clipping, Fonts, Propagation, MouseButtonState, PropSet, Visibility, Display, apply_hover, MouseButton};
 use tuix_core::Size as TuixSize;
 use winit::dpi::Size as Size;
 
@@ -16,7 +17,7 @@ use femtovg::Size as FemtoSize;
 
 use resource::resource;
 
-use tuix_core::event::Event as TuixEvent;
+use tuix_core::event::Event;
 use tuix_core::events::WindowEvent as TuixWindowEvent;
 use std::time::Instant;
 use crate::keyboard::{vcode_to_code, scan_to_code, vk_to_key};
@@ -81,15 +82,19 @@ impl Application {
 		}
 	}
 
-	pub async fn run(self) {
+	pub fn run(self) {
+		pollster::block_on(self.run_internal())
+	}
+
+	async fn run_internal(self) {
 		let mut state = self.state;
 		let mut event_manager = self.event_manager;
 		let mut window = self.window;
 
 		let mut should_quit = false;
 
-		state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
-		state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout).target(Entity::root()));
+		state.insert_event(Event::new(TuixWindowEvent::Restyle).target(Entity::root()));
+		state.insert_event(Event::new(TuixWindowEvent::Relayout).target(Entity::root()));
 
 		let size = window.winit_window.inner_size();
 
@@ -174,7 +179,7 @@ impl Application {
 					// Close Window //
 					//////////////////
 					WindowEvent::CloseRequested => {
-						state.insert_event(TuixEvent::new(TuixWindowEvent::WindowClose));
+						state.insert_event(Event::new(TuixWindowEvent::WindowClose));
 						should_quit = true;
 					}
 
@@ -193,9 +198,9 @@ impl Application {
 					// Focused Window //
 					////////////////////
 					WindowEvent::Focused(_) => {
-						state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
-						state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout).target(Entity::root()));
-						state.insert_event(TuixEvent::new(TuixWindowEvent::Redraw).target(Entity::root()));
+						state.insert_event(Event::new(TuixWindowEvent::Restyle).target(Entity::root()));
+						state.insert_event(Event::new(TuixWindowEvent::Relayout).target(Entity::root()));
+						state.insert_event(Event::new(TuixWindowEvent::Redraw).target(Entity::root()));
 					}
 
 					////////////////////
@@ -204,7 +209,7 @@ impl Application {
 					WindowEvent::ReceivedCharacter(input) => {
 						state.insert_event(
 							// theglutin  ver takes event btw, while we take ref event. what are u talking about sry
-							TuixEvent::new(TuixWindowEvent::CharInput(input))
+							Event::new(TuixWindowEvent::CharInput(input))
 								.target(state.focused)
 								.propagate(Propagation::Down),
 						);
@@ -238,13 +243,9 @@ impl Application {
 
 						state.data.set_clip_region(Entity::root(), bounding_box);
 
-						// state.insert_event(Event::new(WindowEvent::Restyle).origin(Entity::root()).target(Entity::root()));
-						// state.insert_event(
-						//     Event::new(WindowEvent::Relayout).target(Entity::root()),
-						// );
-						state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
-						state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout).target(Entity::root()));
-						state.insert_event(TuixEvent::new(TuixWindowEvent::Redraw).target(Entity::root()));
+						state.insert_event(Event::new(TuixWindowEvent::Restyle).target(Entity::root()));
+						state.insert_event(Event::new(TuixWindowEvent::Relayout).target(Entity::root()));
+						state.insert_event(Event::new(TuixWindowEvent::Redraw).target(Entity::root()));
 					}
 					WindowEvent::CursorMoved {
 						device_id: _, position, ..
@@ -259,13 +260,13 @@ impl Application {
 
 						if state.captured != Entity::null() {
 							state.insert_event(
-								TuixEvent::new(TuixWindowEvent::MouseMove(cursorx, cursory))
+								Event::new(TuixWindowEvent::MouseMove(cursorx, cursory))
 									.target(state.captured)
 									.propagate(Propagation::Direct),
 							);
 						} else if state.hovered != Entity::root() {
 							state.insert_event(
-								TuixEvent::new(TuixWindowEvent::MouseMove(cursorx, cursory))
+								Event::new(TuixWindowEvent::MouseMove(cursorx, cursory))
 									.target(state.hovered),
 							);
 						}
@@ -280,13 +281,13 @@ impl Application {
 
 						if state.captured != Entity::null() {
 							state.insert_event(
-								TuixEvent::new(TuixWindowEvent::MouseScroll(x, y))
+								Event::new(TuixWindowEvent::MouseScroll(x, y))
 									.target(state.captured)
 									.propagate(Propagation::Direct),
 							);
 						} else {
 							state.insert_event(
-								TuixEvent::new(TuixWindowEvent::MouseScroll(x, y))
+								Event::new(TuixWindowEvent::MouseScroll(x, y))
 									.target(state.hovered),
 							);
 						}
@@ -330,19 +331,19 @@ impl Application {
 									&& state.active != state.hovered
 								{
 									state.active = state.hovered;
-									state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
+									state.insert_event(Event::new(TuixWindowEvent::Restyle).target(Entity::root()));
 									state.needs_restyle = true;
 								}
 
 								if state.captured != Entity::null() {
 									state.insert_event(
-										TuixEvent::new(TuixWindowEvent::MouseDown(b))
+										Event::new(TuixWindowEvent::MouseDown(b))
 											.target(state.captured)
 											.propagate(Propagation::Direct),
 									);
 								} else {
 									state.insert_event(
-										TuixEvent::new(TuixWindowEvent::MouseDown(b))
+										Event::new(TuixWindowEvent::MouseDown(b))
 											.target(state.hovered),
 									);
 								}
@@ -377,13 +378,13 @@ impl Application {
 
 								if state.captured != Entity::null() {
 									state.insert_event(
-										TuixEvent::new(TuixWindowEvent::MouseUp(b))
+										Event::new(TuixWindowEvent::MouseUp(b))
 											.target(state.captured)
 											.propagate(Propagation::Direct),
 									);
 								} else {
 									state.insert_event(
-										TuixEvent::new(TuixWindowEvent::MouseUp(b))
+										Event::new(TuixWindowEvent::MouseUp(b))
 											.target(state.hovered),
 									);
 								}
@@ -526,7 +527,7 @@ impl Application {
 
 
 								state.insert_event(
-									TuixEvent::new(TuixWindowEvent::Restyle)
+									Event::new(TuixWindowEvent::Restyle)
 										.target(Entity::root())
 										.origin(Entity::root()),
 								);
@@ -537,13 +538,13 @@ impl Application {
 							MouseButtonState::Pressed => {
 								if state.focused != Entity::null() {
 									state.insert_event(
-										TuixEvent::new(TuixWindowEvent::KeyDown(code, key))
+										Event::new(TuixWindowEvent::KeyDown(code, key))
 											.target(state.focused)
 											.propagate(Propagation::DownUp),
 									);
 								} else {
 									state.insert_event(
-										TuixEvent::new(TuixWindowEvent::KeyDown(code, key))
+										Event::new(TuixWindowEvent::KeyDown(code, key))
 											.target(state.hovered)
 											.propagate(Propagation::DownUp),
 									);
@@ -553,13 +554,13 @@ impl Application {
 							MouseButtonState::Released => {
 								if state.focused != Entity::null() {
 									state.insert_event(
-										TuixEvent::new(TuixWindowEvent::KeyUp(code, key))
+										Event::new(TuixWindowEvent::KeyUp(code, key))
 											.target(state.focused)
 											.propagate(Propagation::DownUp),
 									);
 								} else {
 									state.insert_event(
-										TuixEvent::new(TuixWindowEvent::KeyUp(code, key))
+										Event::new(TuixWindowEvent::KeyUp(code, key))
 											.target(state.hovered)
 											.propagate(Propagation::DownUp),
 									);
@@ -579,7 +580,7 @@ impl Application {
 					if state.apply_animations() {
 						*control_flow = ControlFlow::Poll;
 
-						state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout)
+						state.insert_event(Event::new(TuixWindowEvent::Relayout)
 							.target(Entity::root()));
 
 						//This triggers Event::UserEvent to switch event loop from wait to poll

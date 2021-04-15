@@ -1,6 +1,11 @@
 extern crate tuix;
 use tuix::*;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 static THEME: &'static str = include_str!("themes/animation_theme.css");
 
 fn main() {
@@ -8,10 +13,10 @@ fn main() {
         state.style.parse_theme(THEME);
 
         window.set_title("Animation");
-        
+
         Animations::new().build(state, window.entity(), |builder| builder);
 
-        
+
     });
 
     app.run();

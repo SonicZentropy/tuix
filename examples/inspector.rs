@@ -2,6 +2,10 @@ use tuix::*;
 
 use tuix::style::themes::DEFAULT_THEME;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
 
 #[derive(Inspectable, Default, Clone)]
 pub struct MyData {
@@ -32,12 +36,12 @@ impl<T: Inspectable> Inspector<T> {
     }
 }
 
-impl<T> Widget for Inspector<T> 
+impl<T> Widget for Inspector<T>
 where T: 'static + Inspectable
 {
     type Ret = Entity;
     fn on_build(&mut self, state: &mut State, entity: Entity) -> Self::Ret {
-        
+
         self.data.widget(state, entity, "");
 
         entity
@@ -45,8 +49,8 @@ where T: 'static + Inspectable
 }
 
 fn main() {
-    
-    
+
+
 
     let app = Application::new(move |state, window| {
         state.add_theme(DEFAULT_THEME);
@@ -57,7 +61,7 @@ fn main() {
 
         window.set_title("Inspector Test");
 
-        //let data: String = "Testy Test".to_string(); 
+        //let data: String = "Testy Test".to_string();
         let data = SomeData {
             name: "Test Name".to_string(),
             other: "Other Test Name".to_string(),
@@ -69,7 +73,7 @@ fn main() {
             },
         };
 
-        Inspector::new(data.clone()).build(state, window.entity(), |builder| 
+        Inspector::new(data.clone()).build(state, window.entity(), |builder|
             builder
                 .set_width(Units::Pixels(300.0))
                 .set_flex_grow(1.0)
@@ -85,7 +89,7 @@ fn main() {
         //         .set_text_justify(Justify::Center)
         // });
 
-        
+
     });
 
     app.run();

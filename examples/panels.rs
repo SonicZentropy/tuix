@@ -1,12 +1,17 @@
 use tuix::*;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 const STYLE: &str = r#"
-    
+
     *:focus {
         border-width: 1px;
         border-color: black;
     }
-    
+
 
     panel>.header {
         background-color: #ff5e1a;
@@ -28,7 +33,7 @@ const STYLE: &str = r#"
     button:hover {
         background-color: #ff7033;
     }
-    
+
     panel.one {
         margin: 10px;
         width: 300px;
@@ -55,7 +60,7 @@ const STYLE: &str = r#"
         text-align: start;
         text-justify: center;
     }
-    
+
 "#;
 
 fn main() {
@@ -82,7 +87,7 @@ fn main() {
                 .set_text_justify(Justify::Center)
         });
 
-        
+
     });
 
     app.run();

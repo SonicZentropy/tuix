@@ -4,9 +4,14 @@ use tuix::*;
 
 use image::GenericImageView;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 fn main() {
     let app = Application::new(|state, window| {
-        
+
     let image = image::open("resources/icons/calculator_dark-128.png").unwrap();
 
     let image_id = state.add_image(image);

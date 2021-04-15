@@ -1,9 +1,13 @@
-
-
 use tuix::*;
+
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 fn main() {
     let app = Application::new(|state, window| {
-        
+
         window.set_title("Hello GUI");
 
         Textbox::new("ä")

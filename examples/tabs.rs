@@ -2,6 +2,11 @@ extern crate tuix;
 
 use tuix::*;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 static THEME: &'static str = include_str!("themes/tabs_theme.css");
 
 fn main() {

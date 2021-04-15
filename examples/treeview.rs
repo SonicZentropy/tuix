@@ -4,6 +4,11 @@ use tuix::*;
 
 use tuix::widgets::{Panel, ResizableVBox, ScrollContainer};
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 static THEME: &'static str = include_str!("themes/treeview_theme.css");
 
 fn main() {

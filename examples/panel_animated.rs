@@ -302,8 +302,5 @@ fn main() {
     // });
     // Button::new().build(state, panel, |builder| builder.class("img"));
 
-	#[cfg(feature = "wgpu")]
-		pollster::block_on(app.run());
-	#[cfg(not(feature = "wgpu"))]
-		app.run();
+	app.run();
 }

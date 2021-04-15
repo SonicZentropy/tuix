@@ -630,8 +630,5 @@ pub fn main() {
 
     });
 
-	#[cfg(feature = "wgpu")]
-		pollster::block_on(app.run());
-	#[cfg(not(feature = "wgpu"))]
-		app.run();
+	app.run();
 }

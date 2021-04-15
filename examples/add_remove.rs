@@ -1,6 +1,12 @@
 use tuix::*;
 
 use tuix::style::themes::DEFAULT_THEME;
+
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 // An example for demonstrating the addition and removal of entities
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -72,7 +78,7 @@ fn main() {
         window.set_title("Counter").set_inner_size(400, 100);
 
         Counter::new().build(state, window.entity(), |builder| builder);
-        
+
     });
 
     app.run();

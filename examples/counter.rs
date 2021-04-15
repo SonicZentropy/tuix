@@ -2,6 +2,10 @@ extern crate tuix;
 use tuix::*;
 
 use tuix::button::Button;
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
 
 static THEME: &'static str = include_str!("themes/counter_theme.css");
 

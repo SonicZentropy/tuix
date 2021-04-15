@@ -1,5 +1,11 @@
 use tuix::style::themes::DEFAULT_THEME;
 use tuix::*;
+
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 pub struct Header {}
 
 impl Header {
@@ -41,7 +47,7 @@ fn main() {
 
         window.set_title("Widget Gallery").set_background_color(state, Color::white());
 
-        let (tab_bar, tab_view) = TabManager::new().build(state, window.entity(), |builder| 
+        let (tab_bar, tab_view) = TabManager::new().build(state, window.entity(), |builder|
             builder
                 .set_flex_grow(1.0)
                 .set_flex_basis(Units::Pixels(30.0))

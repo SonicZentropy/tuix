@@ -1,5 +1,10 @@
 use tuix::*;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 fn calculate_winner(squares: &[GameData; 9]) -> GameData {
     const LINES: [[usize; 3]; 8] = [
         [0, 1, 2],
@@ -199,7 +204,7 @@ fn main() {
 
         Board::new().build(state, window.entity(), |builder| builder);
 
-        
+
     });
 
     app.run();
