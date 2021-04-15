@@ -1,4 +1,4 @@
-use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, apply_clipping, Fonts, Propagation, MouseButtonState, PropSet, Visibility, Display};
+use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, apply_clipping, Fonts, Propagation, MouseButtonState, PropSet, Visibility, Display, apply_hover, MouseButton};
 use tuix_core::Size as TuixSize;
 use winit::dpi::Size as Size;
 
@@ -7,7 +7,7 @@ use winit::{
 	event_loop::{ControlFlow, EventLoop},
 };
 
-use winit::event::{Event as WinitEvent, WindowEvent, MouseButton, ElementState, VirtualKeyCode, KeyboardInput};
+use winit::event::{Event as WinitEvent, WindowEvent, ElementState, VirtualKeyCode, KeyboardInput};
 
 use crate::window::Window;
 use femtovg::renderer::{WGPUInstance, WGPUContext, WGPUSwapChain, WGPU};
@@ -32,8 +32,8 @@ pub struct Application {
 type RenderCanvas = femtovg::Canvas<WGPU>;
 
 impl Application {
-	pub fn new<F: FnOnce(&mut State, &mut tuix_core::WindowBuilder)> (
-		app:F,
+	pub fn new<F: FnOnce(&mut State, &mut tuix_core::WindowBuilder)>(
+		app: F,
 	) -> Self {
 		let event_loop = EventLoop::new();
 		let mut state = State::new();
@@ -113,7 +113,7 @@ impl Application {
 				.add_font_mem(&resource!("../examples/assets/entypo.ttf"))
 				.expect("Cannot add font")
 			),
-			emoji: None
+			emoji: None,
 		};
 
 		state.fonts = fonts;
@@ -167,10 +167,9 @@ impl Application {
 
 					canvas.flush(Some(target));
 					frame_count += 1;
-
 				}
 
-				WinitEvent::WindowEvent { ref event, .. } => match event {
+				WinitEvent::WindowEvent { event, .. } => match event {
 					//////////////////
 					// Close Window //
 					//////////////////
@@ -179,7 +178,7 @@ impl Application {
 						should_quit = true;
 					}
 
-                    // TODO: there's a todo in glutin/applications.rs of this exact same code so
+					// TODO: there's a todo in glutin/applications.rs of this exact same code so
 					///////////////////////
 					// Modifiers Changed //
 					///////////////////////
@@ -203,40 +202,218 @@ impl Application {
 					// Focused Window //
 					////////////////////
 					WindowEvent::ReceivedCharacter(input) => {
-
 						state.insert_event(
-                            // theglutin  ver takes event btw, while we take ref event. what are u talking about sry
-							TuixEvent::new(TuixWindowEvent::CharInput(*input))
+							// theglutin  ver takes event btw, while we take ref event. what are u talking about sry
+							TuixEvent::new(TuixWindowEvent::CharInput(input))
 								.target(state.focused)
 								.propagate(Propagation::Down),
 						);
 					}
 
 					#[cfg(not(target_arch = "wasm32"))]
-					WindowEvent::Resized(new_size) => {
-						let new_size = FemtoSize::new(new_size.width as _, new_size.height as _);
+					WindowEvent::Resized(physical_size) => {
+						let new_size = FemtoSize::new(physical_size.width as _, physical_size.height as _);
 						canvas.set_size(new_size.w as _, new_size.h as _, 1.0);
 						swap_chain.resize(new_size);
-						// todo!("resize");
+
+						state
+							.style
+							.width
+							.insert(Entity::root(), Units::Pixels(new_size.w as f32));
+						state
+							.style
+							.height
+							.insert(Entity::root(), Units::Pixels(new_size.h as f32));
+
+						state
+							.data
+							.set_width(Entity::root(), new_size.w as f32);
+						state
+							.data
+							.set_height(Entity::root(), new_size.h as f32);
+
+						let mut bounding_box = BoundingBox::default();
+						bounding_box.w = new_size.w as f32;
+						bounding_box.h = new_size.h as f32;
+
+						state.data.set_clip_region(Entity::root(), bounding_box);
+
+						// state.insert_event(Event::new(WindowEvent::Restyle).origin(Entity::root()).target(Entity::root()));
+						// state.insert_event(
+						//     Event::new(WindowEvent::Relayout).target(Entity::root()),
+						// );
+						state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
+						state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout).target(Entity::root()));
+						state.insert_event(TuixEvent::new(TuixWindowEvent::Redraw).target(Entity::root()));
 					}
 					WindowEvent::CursorMoved {
 						device_id: _, position, ..
 					} => {
+						let cursorx = (position.x) as f32;
+						let cursory = (position.y) as f32;
 
+						state.mouse.cursorx = cursorx as f32;
+						state.mouse.cursory = cursory as f32;
+
+						apply_hover(&mut state);
+
+						if state.captured != Entity::null() {
+							state.insert_event(
+								TuixEvent::new(TuixWindowEvent::MouseMove(cursorx, cursory))
+									.target(state.captured)
+									.propagate(Propagation::Direct),
+							);
+						} else if state.hovered != Entity::root() {
+							state.insert_event(
+								TuixEvent::new(TuixWindowEvent::MouseMove(cursorx, cursory))
+									.target(state.hovered),
+							);
+						}
 					}
 					WindowEvent::MouseWheel {
 						device_id: _, delta, ..
 					} => {
+						let (x, y) = match delta {
+							winit::event::MouseScrollDelta::LineDelta(xx, yy) => (xx, yy),
+							_ => (0.0, 0.0),
+						};
+
+						if state.captured != Entity::null() {
+							state.insert_event(
+								TuixEvent::new(TuixWindowEvent::MouseScroll(x, y))
+									.target(state.captured)
+									.propagate(Propagation::Direct),
+							);
+						} else {
+							state.insert_event(
+								TuixEvent::new(TuixWindowEvent::MouseScroll(x, y))
+									.target(state.hovered),
+							);
+						}
 					}
 					WindowEvent::MouseInput {
-						button: MouseButton::Left,
-						state,
+						button,
+						state: s,
 						..
-					} => match state {
-						ElementState::Pressed => dragging = true,
-						ElementState::Released => dragging = false,
-					},
+					} => {
+						let s = match s {
+							winit::event::ElementState::Pressed => MouseButtonState::Pressed,
+							winit::event::ElementState::Released => MouseButtonState::Released,
+						};
 
+						let b = match button {
+							winit::event::MouseButton::Left => MouseButton::Left,
+							winit::event::MouseButton::Right => MouseButton::Right,
+							winit::event::MouseButton::Middle => MouseButton::Middle,
+							winit::event::MouseButton::Other(id) => MouseButton::Other(id),
+						};
+
+						match b {
+							MouseButton::Left => {
+								state.mouse.left.state = s;
+							}
+
+							MouseButton::Right => {
+								state.mouse.right.state = s;
+							}
+
+							MouseButton::Middle => {
+								state.mouse.middle.state = s;
+							}
+
+							_ => {}
+						}
+
+						match s {
+							MouseButtonState::Pressed => {
+								if state.hovered != Entity::null()
+									&& state.active != state.hovered
+								{
+									state.active = state.hovered;
+									state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
+									state.needs_restyle = true;
+								}
+
+								if state.captured != Entity::null() {
+									state.insert_event(
+										TuixEvent::new(TuixWindowEvent::MouseDown(b))
+											.target(state.captured)
+											.propagate(Propagation::Direct),
+									);
+								} else {
+									state.insert_event(
+										TuixEvent::new(TuixWindowEvent::MouseDown(b))
+											.target(state.hovered),
+									);
+								}
+
+								match b {
+									MouseButton::Left => {
+										state.mouse.left.pos_down =
+											(state.mouse.cursorx, state.mouse.cursory);
+										state.mouse.left.pressed = state.hovered;
+									}
+
+									MouseButton::Middle => {
+										state.mouse.middle.pos_down =
+											(state.mouse.cursorx, state.mouse.cursory);
+										state.mouse.left.pressed = state.hovered;
+									}
+
+									MouseButton::Right => {
+										state.mouse.right.pos_down =
+											(state.mouse.cursorx, state.mouse.cursory);
+										state.mouse.left.pressed = state.hovered;
+									}
+
+									_ => {}
+								}
+							}
+
+							MouseButtonState::Released => {
+								state.active = Entity::null();
+								//state.insert_event(Event::new(WindowEvent::Restyle));
+								state.needs_restyle = true;
+
+								if state.captured != Entity::null() {
+									state.insert_event(
+										TuixEvent::new(TuixWindowEvent::MouseUp(b))
+											.target(state.captured)
+											.propagate(Propagation::Direct),
+									);
+								} else {
+									state.insert_event(
+										TuixEvent::new(TuixWindowEvent::MouseUp(b))
+											.target(state.hovered),
+									);
+								}
+
+								match b {
+									MouseButton::Left => {
+										state.mouse.left.pos_up =
+											(state.mouse.cursorx, state.mouse.cursory);
+										state.mouse.left.released = state.hovered;
+									}
+
+									MouseButton::Middle => {
+										state.mouse.middle.pos_up =
+											(state.mouse.cursorx, state.mouse.cursory);
+										state.mouse.left.released = state.hovered;
+									}
+
+									MouseButton::Right => {
+										state.mouse.right.pos_up =
+											(state.mouse.cursorx, state.mouse.cursory);
+										state.mouse.left.released = state.hovered;
+									}
+
+									_ => {}
+								}
+							}
+						}
+					}
+
+						//wtf happened to this
 					WindowEvent::KeyboardInput {
 						device_id: _,
 						input,
@@ -312,18 +489,15 @@ impl Application {
 									println!("Focused: {}", state.focused);
 
 
-
-
 									if next_focus != Entity::null() {
 										state.focused.set_focus(&mut state, false);
 										state.focused = next_focus;
 										state.focused.set_focus(&mut state, true);
 									} else {
-
 										state.focused.set_focus(&mut state, false);
 
 										use tuix_core::IntoHierarchyIterator;
-										let mut iter =  state.focused.into_iter(&hierarchy);
+										let mut iter = state.focused.into_iter(&hierarchy);
 										iter.next();
 
 
@@ -351,13 +525,11 @@ impl Application {
 								}
 
 
-
 								state.insert_event(
 									TuixEvent::new(TuixWindowEvent::Restyle)
 										.target(Entity::root())
 										.origin(Entity::root()),
 								);
-
 							}
 						}
 
@@ -405,7 +577,6 @@ impl Application {
 					}
 
 					if state.apply_animations() {
-
 						*control_flow = ControlFlow::Poll;
 
 						state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout)
@@ -425,7 +596,6 @@ impl Application {
 						window.winit_window.request_redraw();
 						state.needs_redraw = false;
 					}
-
 				}
 				_ => (),
 			}
@@ -434,7 +604,6 @@ impl Application {
 				*control_flow = ControlFlow::Exit;
 			}
 		});
-
 	}
 }
 
