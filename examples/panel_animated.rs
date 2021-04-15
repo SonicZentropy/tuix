@@ -7,6 +7,11 @@ use tuix::widgets::{
     ScrollContainer, Spinbox, Textbox, VectorEdit, VectorEditEvent,
 };
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 static THEME: &'static str = include_str!("themes/panel_animated_theme.css");
 
 #[derive(Debug, Clone, PartialEq)]
@@ -221,7 +226,7 @@ fn main() {
             builder.set_width(Units::Pixels(50.0))
         });
 
-        
+
     });
 
     // Get the state from the window
@@ -297,5 +302,8 @@ fn main() {
     // });
     // Button::new().build(state, panel, |builder| builder.class("img"));
 
-    app.run();
+	#[cfg(feature = "wgpu")]
+		pollster::block_on(app.run());
+	#[cfg(not(feature = "wgpu"))]
+		app.run();
 }

@@ -116,8 +116,6 @@ impl Application {
 		}
 	}
 
-
-
 	pub async fn run(self) {
 		let mut state = self.state;
 		let mut event_manager = self.event_manager;

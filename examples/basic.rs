@@ -2,11 +2,16 @@ extern crate tuix;
 
 use tuix::*;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 //static THEME: &'static str = include_str!("themes/basic_theme.css");
 
 fn main() {
     // Create the app
-    let app = tuix_wgpu::application::Application::new(|state, window| {
+    let app = Application::new(|state, window| {
         match state.add_stylesheet("examples/themes/basic_theme.css") {
             Ok(_) => {}
             Err(e) => println!("Error loading stylesheet: {}", e),
@@ -121,5 +126,8 @@ fn main() {
 
     });
 
+	#[cfg(feature = "wgpu")]
     pollster::block_on(app.run());
+	#[cfg(not(feature = "wgpu"))]
+	app.run();
 }

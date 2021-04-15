@@ -4,6 +4,11 @@ use image::GenericImageView;
 
 use tuix::*;
 
+#[cfg(feature = "wgpu")]
+use tuix_wgpu::application::Application;
+#[cfg(not(feature = "wgpu"))]
+use tuix::Application;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum CalculatorEvent {
     Digit(char),
@@ -625,5 +630,8 @@ pub fn main() {
 
     });
 
-    app.run();
+	#[cfg(feature = "wgpu")]
+		pollster::block_on(app.run());
+	#[cfg(not(feature = "wgpu"))]
+		app.run();
 }
