@@ -224,9 +224,9 @@ impl EventManager {
         let dpi_factor = 1.0;
 
         // Set the canvas size
-        if (self.prev_width != width
+        if self.prev_width != width
             || self.prev_height != height
-            || self.prev_dpi_factor != dpi_factor)
+            || self.prev_dpi_factor != dpi_factor
         {
             canvas.set_size(width as u32, height as u32, dpi_factor as f32);
         }
@@ -256,8 +256,5 @@ impl EventManager {
                 event_handler.on_draw_(state, widget, canvas);
             }
         }
-
-        // Send the canvas to the GPU to draw
-        //canvas.flush(render_target);
     }
 }

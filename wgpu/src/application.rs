@@ -1,4 +1,4 @@
-use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, apply_clipping, Fonts};
+use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, apply_clipping, Fonts, Propagation, MouseButtonState, PropSet, Visibility, Display};
 use tuix_core::Size as TuixSize;
 use winit::dpi::Size as Size;
 
@@ -19,6 +19,7 @@ use resource::resource;
 use tuix_core::event::Event as TuixEvent;
 use tuix_core::events::WindowEvent as TuixWindowEvent;
 use std::time::Instant;
+use crate::keyboard::{vcode_to_code, scan_to_code, vk_to_key};
 
 pub struct Application {
 	pub window: Window,
@@ -45,44 +46,8 @@ impl Application {
 		let mut tuix_window_builder = tuix_core::WindowBuilder::new(root);
 		app(&mut state, &mut tuix_window_builder);
 		let window_description = tuix_window_builder.get_window_description();
-		let inner = &tuix_window_builder.get_window_description().inner_size;
-
-		let size = winit::dpi::LogicalSize::new(inner.width, inner.height);
 		let window = Window::new(&event_loop, window_description);
 
-		let regular_font = include_bytes!("../../resources/Roboto-Regular.ttf");
-		let bold_font = include_bytes!("../../resources/Roboto-Bold.ttf");
-		let icon_font = include_bytes!("../../resources/entypo.ttf");
-		let emoji_font = include_bytes!("../../resources/OpenSansEmoji.ttf");
-
-		/*let fonts = Fonts {  //TODO: Fix this
-			regular: Some(
-				window
-					.canvas
-					.add_font_mem(regular_font)
-					.expect("Cannot add font"),
-			),
-			bold: Some(
-				window
-					.canvas
-					.add_font_mem(bold_font)
-					.expect("Cannot add font"),
-			),
-			icons: Some(
-				window
-					.canvas
-					.add_font_mem(icon_font)
-					.expect("Cannot add font"),
-			),
-			emoji: Some(
-				window
-					.canvas
-					.add_font_mem(emoji_font)
-					.expect("Cannot add font"),
-			),
-		};
-
-		state.fonts = fonts;*/
 		state.style.width.insert(
 			Entity::root(),
 			Units::Pixels(window_description.inner_size.width as f32),
@@ -120,11 +85,11 @@ impl Application {
 		let mut state = self.state;
 		let mut event_manager = self.event_manager;
 		let mut window = self.window;
+
 		let mut should_quit = false;
 
 		state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
 		state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout).target(Entity::root()));
-
 
 		let size = window.winit_window.inner_size();
 
@@ -157,7 +122,7 @@ impl Application {
 			.load_image_mem(&resource!("../examples/assets/images/image4.jpg"), ImageFlags::empty())
 			.unwrap();
 
-		let mut screenshot_image_id = None;
+		//let mut screenshot_image_id = None;
 
 		let start = Instant::now();
 		let mut prevt = start;
@@ -167,6 +132,7 @@ impl Application {
 		let mut dragging = false;
 
 		//gfx hasn't implemented this for vulkan yet
+		//TODO Fix gfx to implement this because it's awesome
 		//ctx.device().start_capture();
 
 		// let mut perf = PerfGraph::new();
@@ -182,7 +148,70 @@ impl Application {
 			match event {
 				WinitEvent::LoopDestroyed => return,
 
+				WinitEvent::UserEvent(_) => {
+					window.winit_window.request_redraw();
+				}
+				WinitEvent::RedrawRequested(_) => {
+					let now = Instant::now();
+					let dt = (now - prevt).as_secs_f32();
+					prevt = now;
+
+					let dpi_factor = window.winit_window.scale_factor();
+					let size = window.winit_window.inner_size();
+
+					let frame = swap_chain.get_current_frame().unwrap();
+					let target = &frame.output.view;
+
+					let hierarchy = state.hierarchy.clone();
+					event_manager.draw(&mut state, &hierarchy, &mut canvas);
+
+					canvas.flush(Some(target));
+					frame_count += 1;
+
+				}
+
 				WinitEvent::WindowEvent { ref event, .. } => match event {
+					//////////////////
+					// Close Window //
+					//////////////////
+					WindowEvent::CloseRequested => {
+						state.insert_event(TuixEvent::new(TuixWindowEvent::WindowClose));
+						should_quit = true;
+					}
+
+                    // TODO: there's a todo in glutin/applications.rs of this exact same code so
+					///////////////////////
+					// Modifiers Changed //
+					///////////////////////
+					WindowEvent::ModifiersChanged(modifiers_state) => {
+						state.modifiers.shift = modifiers_state.shift();
+						state.modifiers.ctrl = modifiers_state.ctrl();
+						state.modifiers.alt = modifiers_state.alt();
+						state.modifiers.logo = modifiers_state.logo();
+					}
+
+					////////////////////
+					// Focused Window //
+					////////////////////
+					WindowEvent::Focused(_) => {
+						state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
+						state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout).target(Entity::root()));
+						state.insert_event(TuixEvent::new(TuixWindowEvent::Redraw).target(Entity::root()));
+					}
+
+					////////////////////
+					// Focused Window //
+					////////////////////
+					WindowEvent::ReceivedCharacter(input) => {
+
+						state.insert_event(
+                            // theglutin  ver takes event btw, while we take ref event. what are u talking about sry
+							TuixEvent::new(TuixWindowEvent::CharInput(*input))
+								.target(state.focused)
+								.propagate(Propagation::Down),
+						);
+					}
+
 					#[cfg(not(target_arch = "wasm32"))]
 					WindowEvent::Resized(new_size) => {
 						let new_size = FemtoSize::new(new_size.width as _, new_size.height as _);
@@ -207,58 +236,169 @@ impl Application {
 						ElementState::Pressed => dragging = true,
 						ElementState::Released => dragging = false,
 					},
+
 					WindowEvent::KeyboardInput {
-						input:
-						KeyboardInput {
-							virtual_keycode: Some(VirtualKeyCode::S),
-							state: ElementState::Pressed,
-							..
-						},
-						..
+						device_id: _,
+						input,
+						is_synthetic: _,
 					} => {
-						if let Some(screenshot_image_id) = screenshot_image_id {
-							canvas.delete_image(screenshot_image_id);
+						let s = match input.state {
+							winit::event::ElementState::Pressed => MouseButtonState::Pressed,
+							winit::event::ElementState::Released => MouseButtonState::Released,
+						};
+
+						// Prefer virtual keycodes to scancodes, as scancodes aren't uniform between platforms
+						let code = if let Some(vkey) = input.virtual_keycode {
+							vcode_to_code(vkey)
+						} else {
+							scan_to_code(input.scancode)
+						};
+
+						let key = vk_to_key(
+							input.virtual_keycode.unwrap_or(VirtualKeyCode::NoConvert),
+						);
+
+						if let Some(virtual_keycode) = input.virtual_keycode {
+							if virtual_keycode == VirtualKeyCode::F5
+								&& s == MouseButtonState::Pressed
+							{
+								state.reload_styles().unwrap();
+							}
+
+							if virtual_keycode == VirtualKeyCode::H && s == MouseButtonState::Pressed {
+								println!("Hierarchy");
+								for entity in state.hierarchy.into_iter() {
+									//println!("Entity: {}  Parent: {:?} FC: {:?} NS: {:?}", entity, state.hierarchy.get_parent(entity), state.hierarchy.get_first_child(entity), state.hierarchy.get_next_sibling(entity));
+									println!("Entity: {} posx: {} posy: {} width: {} height: {} visibility: {:?}", entity, state.data.get_posx(entity), state.data.get_posy(entity), state.data.get_width(entity), state.data.get_height(entity), state.data.get_visibility(entity));
+								}
+							}
+
+							if virtual_keycode == VirtualKeyCode::Tab
+								&& s == MouseButtonState::Pressed
+							{
+								let next_focus = state
+									.style
+									.focus_order
+									.get(state.focused)
+									.cloned()
+									.unwrap_or_default()
+									.next;
+								let prev_focus = state
+									.style
+									.focus_order
+									.get(state.focused)
+									.cloned()
+									.unwrap_or_default()
+									.prev;
+
+								if state.modifiers.shift {
+									if prev_focus != Entity::null() {
+										state.focused.set_focus(&mut state, false);
+										state.focused = prev_focus;
+										state.focused.set_focus(&mut state, true);
+									} else {
+										// TODO impliment reverse iterator for hierarchy
+										// state.focused = match state.focused.into_iter(&state.hierarchy).next() {
+										//     Some(val) => val,
+										//     None => Entity::root(),
+										// };
+									}
+								} else {
+									let hierarchy = state.hierarchy.clone();
+
+
+									//let next = iter.next();
+
+									println!("Focused: {}", state.focused);
+
+
+
+
+									if next_focus != Entity::null() {
+										state.focused.set_focus(&mut state, false);
+										state.focused = next_focus;
+										state.focused.set_focus(&mut state, true);
+									} else {
+
+										state.focused.set_focus(&mut state, false);
+
+										use tuix_core::IntoHierarchyIterator;
+										let mut iter =  state.focused.into_iter(&hierarchy);
+										iter.next();
+
+
+										state.focused = if let Some(mut temp) = iter.next() {
+											while !state.data.get_focusability(temp)
+												|| state.data.get_visibility(temp) == Visibility::Invisible
+												|| state.data.get_opacity(temp) == 0.0
+												|| state.style.display.get(temp) == Some(&Display::None)
+											{
+												temp = match iter.next() {
+													Some(e) => e,
+													None => {
+														break;
+													}
+												}
+											}
+
+											temp
+										} else {
+											Entity::root()
+										};
+
+										state.focused.set_focus(&mut state, true);
+									}
+								}
+
+
+
+								state.insert_event(
+									TuixEvent::new(TuixWindowEvent::Restyle)
+										.target(Entity::root())
+										.origin(Entity::root()),
+								);
+
+							}
 						}
 
-						// if let Ok(image) = canvas.screenshot() {
-						//     screenshot_image_id = Some(canvas.create_image(image.as_ref(), ImageFlags::empty()).unwrap());
-						// }
+						match s {
+							MouseButtonState::Pressed => {
+								if state.focused != Entity::null() {
+									state.insert_event(
+										TuixEvent::new(TuixWindowEvent::KeyDown(code, key))
+											.target(state.focused)
+											.propagate(Propagation::DownUp),
+									);
+								} else {
+									state.insert_event(
+										TuixEvent::new(TuixWindowEvent::KeyDown(code, key))
+											.target(state.hovered)
+											.propagate(Propagation::DownUp),
+									);
+								}
+							}
+
+							MouseButtonState::Released => {
+								if state.focused != Entity::null() {
+									state.insert_event(
+										TuixEvent::new(TuixWindowEvent::KeyUp(code, key))
+											.target(state.focused)
+											.propagate(Propagation::DownUp),
+									);
+								} else {
+									state.insert_event(
+										TuixEvent::new(TuixWindowEvent::KeyUp(code, key))
+											.target(state.hovered)
+											.propagate(Propagation::DownUp),
+									);
+								}
+							}
+						}
 					}
-					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+
 					_ => (),
 				},
-				WinitEvent::RedrawRequested(_) => {
-					let now = Instant::now();
-					let dt = (now - prevt).as_secs_f32();
-					prevt = now;
 
-					let dpi_factor = window.winit_window.scale_factor();
-					let size = window.winit_window.inner_size();
-
-					let frame = swap_chain.get_current_frame().unwrap();
-					let target = &frame.output.view;
-
-
-					let hierarchy = state.hierarchy.clone();
-					event_manager.draw(&mut state, &hierarchy, &mut canvas);
-
-					canvas.flush(Some(target));
-					frame_count += 1;
-
-					//canvas.set_size(size.width as u32, size.height as u32, dpi_factor as f32);
-					//let bg_color = Color::rgbf(0.3, 0.3, 0.3);
-					//canvas.clear_rect(0, 0, size.width as u32, size.height as u32, bg_color);
-					//
-					//draw_text(&mut canvas, &fonts, "qwe", 200.0, 0.0, 100.0, 300.0);
-					//draw_image(&mut canvas, 30.0, 30.0, &[image]);
-					//
-					//let hierarchy = state.hierarchy.clone();
-					//event_manager.draw(&mut state, &hierarchy, &mut canvas);
-					//
-					//canvas.flush(Some(target));
-					//
-					//frame_count += 1;
-				}
 				WinitEvent::MainEventsCleared => { //done
 					while !state.event_queue.is_empty() {
 						event_manager.flush_events(&mut state);
@@ -289,6 +429,10 @@ impl Application {
 				}
 				_ => (),
 			}
+
+			if should_quit {
+				*control_flow = ControlFlow::Exit;
+			}
 		});
 
 	}
@@ -315,47 +459,4 @@ impl Application {
 //}
 //
 //
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

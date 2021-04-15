@@ -14,7 +14,8 @@ pub struct Window {
 impl Window {
 	pub fn new(events_loop: &EventLoop<()>, window_description: &WindowDescription) -> Self {
 		let inner = &window_description.inner_size;
-		let size = winit::dpi::LogicalSize::new(inner.width, inner.height);
+		//TODO: This should use LogicalSize instead, but it breaks our swapchain atm
+		let size = winit::dpi::PhysicalSize::new(inner.width, inner.height);
 		let winit_window = winit::window::WindowBuilder::new()
 			.with_inner_size(size)
 			.with_title("tuix wgpu demo")
