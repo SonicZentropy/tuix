@@ -10,17 +10,17 @@ use femtovg::{
 };
 
 // Draws a shadow based on the shadow style properties of the entity
-pub fn draw_shadow(state: &mut State, entity: Entity, canvas: Canvas<OpenGl>) {
+pub fn draw_shadow(state: &mut State, entity: Entity, canvas: RenderCanvas) {
 
 }
 
 // Draws the widget with specified background and border
-pub fn draw_widget(state: &mut State, entity: Entity, canvas: Canvas<OpenGl>) {
+pub fn draw_widget(state: &mut State, entity: Entity, canvas: RenderCanvas) {
 
 }
 
 // Draws the text based on style properties
-pub fn draw_text(state: &mut State, entity: Entity, canvas: &mut Canvas<OpenGl>) {
+pub fn draw_text(state: &mut State, entity: Entity, canvas: &mut RenderCanvas) {
     let parent = entity.get_parent(state).unwrap();
 
     let parent_width = state.data.get_width(parent);
@@ -102,7 +102,7 @@ pub fn draw_text(state: &mut State, entity: Entity, canvas: &mut Canvas<OpenGl>)
             .get(entity)
             .cloned()
             .unwrap_or(crate::Color::rgb(255, 255, 255));
-        
+
         let opacity = state.data.get_opacity(entity);
 
         let mut font_color: femtovg::Color = font_color.into();
@@ -122,18 +122,18 @@ pub fn draw_text(state: &mut State, entity: Entity, canvas: &mut Canvas<OpenGl>)
 }
 
 // Applies a clipping scissor to the widget
-pub fn apply_scissor(state: &mut State, entity: Entity, canvas: &mut Canvas<OpenGl>) {
-    
+pub fn apply_scissor(state: &mut State, entity: Entity, canvas: &mut RenderCanvas) {
+
     let posx = state.data.get_posx(entity);
     let posy = state.data.get_posy(entity);
     let width = state.data.get_width(entity);
     let height = state.data.get_height(entity);
-    
+
     let mut clip_region = state.data.get_clip_region(entity);
     canvas.scissor(clip_region.x - posx, clip_region.y - posy, clip_region.w, clip_region.h);
 }
 
 // Converts from widget coordinates to screen coordinates
 // pub fn widget_to_screen(widget_coordinates: (f32, f32)) -> (f32,f32) {
-    
+
 // }

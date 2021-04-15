@@ -160,6 +160,7 @@ impl Application {
 
                         state.insert_event(Event::new(WindowEvent::Relayout).target(Entity::root()));
 
+	                    //This triggers Event::UserEvent to switch event loop from wait to poll
                         event_loop_proxy.send_event(()).unwrap();
                         window.handle.window().request_redraw();
                     } else {

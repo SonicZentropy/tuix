@@ -1,12 +1,14 @@
-use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget};
-use tuix_core::Fonts as TuixFonts;
+use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, apply_clipping, Fonts};
 use tuix_core::Size as TuixSize;
 use winit::dpi::Size as Size;
 
 use winit::{
-	event::*,
+	//event::*,
 	event_loop::{ControlFlow, EventLoop},
 };
+
+use winit::event::{Event as WinitEvent, WindowEvent, MouseButton, ElementState, VirtualKeyCode, KeyboardInput};
+
 use crate::window::Window;
 use femtovg::renderer::{WGPUInstance, WGPUContext, WGPUSwapChain, WGPU};
 use femtovg::{Canvas, FontId, ImageFlags, Color, Align, Baseline, ImageId, Paint, Path, Renderer};
@@ -18,18 +20,15 @@ use tuix_core::event::Event as TuixEvent;
 use tuix_core::events::WindowEvent as TuixWindowEvent;
 use std::time::Instant;
 
-struct Fonts {
-	regular: FontId,
-	bold: FontId,
-	icons: FontId,
-}
-
 pub struct Application {
 	pub window: Window,
 	pub state: State,
 	event_loop: EventLoop<()>,
 	pub event_manager: EventManager,
 }
+
+
+type RenderCanvas = femtovg::Canvas<WGPU>;
 
 impl Application {
 	pub fn new<F: FnOnce(&mut State, &mut tuix_core::WindowBuilder)> (
@@ -127,7 +126,7 @@ impl Application {
 
 		state.insert_event(TuixEvent::new(TuixWindowEvent::Restyle).target(Entity::root()));
 		state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout).target(Entity::root()));
-		state.needs_redraw = true;
+
 
 		let size = window.winit_window.inner_size();
 
@@ -139,16 +138,22 @@ impl Application {
 		let mut canvas = Canvas::new(renderer).expect("Cannot create canvas");
 
 		let fonts = Fonts {
-			regular: canvas
+			regular: Some(canvas
 				.add_font_mem(&resource!("../examples/assets/Roboto-Regular.ttf"))
-				.expect("Cannot add font"),
-			bold: canvas
+				.expect("Cannot add font")
+			),
+			bold: Some(canvas
 				.add_font_mem(&resource!("../examples/assets/Roboto-Light.ttf"))
-				.expect("Cannot add font"),
-			icons: canvas
+				.expect("Cannot add font")
+			),
+			icons: Some(canvas
 				.add_font_mem(&resource!("../examples/assets/entypo.ttf"))
-				.expect("Cannot add font"),
+				.expect("Cannot add font")
+			),
+			emoji: None
 		};
+
+		state.fonts = fonts;
 
 		let image = canvas
 			.load_image_mem(&resource!("../examples/assets/images/image4.jpg"), ImageFlags::empty())
@@ -170,17 +175,16 @@ impl Application {
 
 		let mut frame_count = 0;
 
-		let mut event_loop = self.event_loop;
+		let mut event_loop_proxy = self.event_loop.create_proxy();
+		state.needs_redraw = true;
 
-		event_loop.run(move |event, _, control_flow| {
-			// #[cfg(not(target_arch = "wasm32"))]
-			// let window = windowed_context.window();
-
-			*control_flow = ControlFlow::Poll;
+		self.event_loop.run(move |event, _, control_flow| {
+			*control_flow = ControlFlow::Wait;
 
 			match event {
-				Event::LoopDestroyed => return,
-				Event::WindowEvent { ref event, .. } => match event {
+				WinitEvent::LoopDestroyed => return,
+
+				WinitEvent::WindowEvent { ref event, .. } => match event {
 					#[cfg(not(target_arch = "wasm32"))]
 					WindowEvent::Resized(new_size) => {
 						let new_size = FemtoSize::new(new_size.width as _, new_size.height as _);
@@ -191,29 +195,11 @@ impl Application {
 					WindowEvent::CursorMoved {
 						device_id: _, position, ..
 					} => {
-						// if dragging {
-						//     let p0 = canvas.transform().inversed().transform_point(mousex, mousey);
-						//     let p1 = canvas
-						//         .transform()
-						//         .inversed()
-						//         .transform_point(position.x as f32, position.y as f32);
 
-						//     canvas.translate(p1.0 - p0.0, p1.1 - p0.1);
-						// }
-
-						// mousex = position.x as f32;
-						// mousey = position.y as f32;
 					}
 					WindowEvent::MouseWheel {
 						device_id: _, delta, ..
-					} => { //match delta {
-						// winit::event::MouseScrollDelta::LineDelta(_, y) => {
-						//     let pt = canvas.transform().inversed().transform_point(mousex, mousey);
-						//     canvas.translate(pt.0, pt.1);
-						//     canvas.scale(1.0 + (y / 10.0), 1.0 + (y / 10.0));
-						//     canvas.translate(-pt.0, -pt.1);
-						// }
-						// _ => (),
+					} => {
 					}
 					WindowEvent::MouseInput {
 						button: MouseButton::Left,
@@ -243,41 +229,65 @@ impl Application {
 					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
 					_ => (),
 				},
-				Event::RedrawRequested(_) => {
+				WinitEvent::RedrawRequested(_) => {
 					let now = Instant::now();
 					let dt = (now - prevt).as_secs_f32();
 					prevt = now;
 
-					// perf.update(dt);
-
 					let dpi_factor = window.winit_window.scale_factor();
-					//let size = window.inner_size();
 					let size = window.winit_window.inner_size();
-
-					// let t = start.elapsed().as_secs_f32();
-
-					canvas.set_size(size.width as u32, size.height as u32, dpi_factor as f32);
-					let bg_color = Color::rgbf(0.3, 0.3, 0.3);
-					canvas.clear_rect(0, 0, size.width as u32, size.height as u32, bg_color);
-
-
-					draw_text(&mut canvas, &fonts, "qwe", 200.0, 0.0, 100.0, 300.0);
-					draw_image(&mut canvas, 30.0, 30.0, &[image]);
-
-					let height = 600.0;
-					let width = 800.0;
-
-					let t = 0.0;
 
 					let frame = swap_chain.get_current_frame().unwrap();
 					let target = &frame.output.view;
-					canvas.flush(Some(target));
 
+
+					let hierarchy = state.hierarchy.clone();
+					event_manager.draw(&mut state, &hierarchy, &mut canvas);
+
+					canvas.flush(Some(target));
 					frame_count += 1;
+
+					//canvas.set_size(size.width as u32, size.height as u32, dpi_factor as f32);
+					//let bg_color = Color::rgbf(0.3, 0.3, 0.3);
+					//canvas.clear_rect(0, 0, size.width as u32, size.height as u32, bg_color);
+					//
+					//draw_text(&mut canvas, &fonts, "qwe", 200.0, 0.0, 100.0, 300.0);
+					//draw_image(&mut canvas, 30.0, 30.0, &[image]);
+					//
+					//let hierarchy = state.hierarchy.clone();
+					//event_manager.draw(&mut state, &hierarchy, &mut canvas);
+					//
+					//canvas.flush(Some(target));
+					//
+					//frame_count += 1;
 				}
-				Event::MainEventsCleared => {
-					//scroll = 1.0;
-					window.winit_window.request_redraw()
+				WinitEvent::MainEventsCleared => { //done
+					while !state.event_queue.is_empty() {
+						event_manager.flush_events(&mut state);
+					}
+
+					if state.apply_animations() {
+
+						*control_flow = ControlFlow::Poll;
+
+						state.insert_event(TuixEvent::new(TuixWindowEvent::Relayout)
+							.target(Entity::root()));
+
+						//This triggers Event::UserEvent to switch event loop from wait to poll
+						event_loop_proxy.send_event(()).unwrap();
+						window.winit_window.request_redraw();
+					} else {
+						*control_flow = ControlFlow::Wait;
+					}
+
+					let hierarchy = state.hierarchy.clone();
+
+					if state.needs_redraw {
+						apply_clipping(&mut state, &hierarchy);
+						window.winit_window.request_redraw();
+						state.needs_redraw = false;
+					}
+
 				}
 				_ => (),
 			}
@@ -286,27 +296,27 @@ impl Application {
 	}
 }
 
-fn draw_text<T: Renderer>(canvas: &mut Canvas<T>, fonts: &Fonts, title: &str, x: f32, y: f32, w: f32, h: f32) {
-	canvas.save();
-	let mut text_paint = Paint::color(Color::rgba(255, 0, 0, 255));
-	text_paint.set_font_size(80.0);
-	text_paint.set_font(&[fonts.regular]);
-	text_paint.set_text_align(Align::Left);
-	text_paint.set_text_baseline(Baseline::Middle);
-	let _ = canvas.fill_text(x + h, y + h * 0.5, title, text_paint);
-	canvas.restore();
-}
-
-fn draw_image(canvas: &mut Canvas<impl Renderer>, x: f32, y: f32, images: &[ImageId]) {
-	let (w, h) = canvas.image_size(images[0]).unwrap();
-
-	let paint = Paint::image(images[0], x, y, w as f32, h as f32, 0.0, 1.0);
-	let mut path = Path::new();
-	path.rect(x, y, w as _, h as _);
-	canvas.fill_path(&mut path, paint);
-}
-
-
+//fn draw_text<T: Renderer>(canvas: &mut Canvas<T>, fonts: &Fonts, title: &str, x: f32, y: f32, w: f32, h: f32) {
+//	canvas.save();
+//	let mut text_paint = Paint::color(Color::rgba(255, 0, 0, 255));
+//	text_paint.set_font_size(80.0);
+//	text_paint.set_font(&[fonts.regular]);
+//	text_paint.set_text_align(Align::Left);
+//	text_paint.set_text_baseline(Baseline::Middle);
+//	let _ = canvas.fill_text(x + h, y + h * 0.5, title, text_paint);
+//	canvas.restore();
+//}
+//
+//fn draw_image(canvas: &mut Canvas<impl Renderer>, x: f32, y: f32, images: &[ImageId]) {
+//	let (w, h) = canvas.image_size(images[0]).unwrap();
+//
+//	let paint = Paint::image(images[0], x, y, w as f32, h as f32, 0.0, 1.0);
+//	let mut path = Path::new();
+//	path.rect(x, y, w as _, h as _);
+//	canvas.fill_path(&mut path, paint);
+//}
+//
+//
 
 
 

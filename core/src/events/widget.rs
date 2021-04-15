@@ -1,4 +1,4 @@
-use crate::{builder::Builder, EventHandler};
+use crate::{builder::Builder, EventHandler, RenderCanvas};
 use crate::{Entity, Hierarchy, State, AsEntity};
 use femtovg::{
     renderer::OpenGl, Align, Baseline, FillRule, FontId, ImageFlags, ImageId, LineCap, LineJoin,
@@ -40,7 +40,7 @@ pub trait Widget: std::marker::Sized + 'static {
     fn on_test(&self) {}
 
     // Called when a redraw occurs
-    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
+    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut RenderCanvas) {
         // Skip window
         if entity == Entity::root() {
             return;
@@ -106,8 +106,8 @@ pub trait Widget: std::marker::Sized + 'static {
             .get(entity)
             .cloned()
             .unwrap_or_default();
-        
-       
+
+
 
         let font_color = state
             .style
@@ -400,9 +400,9 @@ pub trait Widget: std::marker::Sized + 'static {
 
                     _=> {}
                 }
-                
+
             }
-        } 
+        }
 
         // Gradient overrides background color
         if let Some(background_gradient) = state.style.background_gradient.get_mut(entity) {
@@ -554,7 +554,7 @@ where
         <T as Widget>::on_event(self, state, entity, event);
     }
 
-    fn on_draw_(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
+    fn on_draw_(&mut self, state: &mut State, entity: Entity, canvas: &mut RenderCanvas) {
         <T as Widget>::on_draw(self, state, entity, canvas);
     }
 }

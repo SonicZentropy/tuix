@@ -210,7 +210,7 @@ impl Widget for ControlKnob {
         }
     }
 
-    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas<OpenGl>) {
+    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut RenderCanvas) {
         if state.data.get_visibility(entity) == Visibility::Invisible {
             return;
         }

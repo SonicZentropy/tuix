@@ -1,7 +1,4 @@
-use crate::{
-    events::{Event, EventManager, Message},
-    state,
-};
+use crate::{events::{Event, EventManager, Message}, state, RenderCanvas};
 
 use crate::builder::Builder;
 
@@ -18,8 +15,6 @@ use crate::style::{Direction, Justify, Units, Visibility};
 
 use std::any::{Any, TypeId};
 
-pub type Canvas = femtovg::Canvas<OpenGl>;
-
 pub(crate) trait EventHandler: Any {
     // Called when events are flushed
     fn on_event_(&mut self, state: &mut State, entity: Entity, event: &mut Event) {}
@@ -27,7 +22,7 @@ pub(crate) trait EventHandler: Any {
     //fn on_draw_(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas);
     // Called when a redraw occurs
 
-    fn on_draw_(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
+    fn on_draw_(&mut self, state: &mut State, entity: Entity, canvas: &mut RenderCanvas) {
         // Skip window
         if entity == Entity::root() {
             return;

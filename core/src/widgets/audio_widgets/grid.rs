@@ -18,7 +18,7 @@ impl Widget for Grid {
 
     fn on_event(&mut self, _state: &mut State, _entity: Entity, _event: &mut Event) {}
 
-    fn on_draw(&mut self, _state: &mut State, _entity: Entity, _canvas: &mut Canvas<OpenGl>) {
+    fn on_draw(&mut self, _state: &mut State, _entity: Entity, _canvas: &mut RenderCanvas) {
 
         // Draw background
 

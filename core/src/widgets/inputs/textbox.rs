@@ -2,7 +2,7 @@
 
 use crate::entity::Entity;
 use crate::events::*;
-use crate::{Direction, Justify, Units, PropGet, PropSet, State, Visibility, WindowEvent};
+use crate::{Direction, Justify, Units, PropGet, PropSet, State, Visibility, WindowEvent, RenderCanvas};
 
 use femtovg::{renderer::OpenGl, Align, Baseline, Canvas, Color, Paint, Path, Solidity};
 
@@ -402,7 +402,7 @@ impl Widget for Textbox {
         &mut self,
         state: &mut State,
         entity: Entity,
-        canvas: &mut Canvas<OpenGl>,
+        canvas: &mut RenderCanvas,
         //images: &HashMap<String, nanovg::Image>,
     ) {
         // Skip window

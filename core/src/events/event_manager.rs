@@ -1,7 +1,6 @@
-use crate::{
-    Builder, CursorIcon, Entity, Event, Hierarchy, HierarchyTree, IntoBranchIterator,
-    IntoHierarchyIterator, IntoParentIterator, PropSet, Propagation, State, WindowEvent, ImageOrId
-};
+use crate::{Builder, CursorIcon, Entity, Event, Hierarchy, HierarchyTree, IntoBranchIterator,
+            IntoHierarchyIterator, IntoParentIterator, PropSet, Propagation, State,
+            WindowEvent, ImageOrId, RenderCanvas};
 
 use crate::EventHandler;
 
@@ -10,8 +9,8 @@ use std::{collections::{HashMap, VecDeque}, convert::TryInto, println};
 use std::time::{Duration, Instant};
 
 use femtovg::{
-    renderer::OpenGl, Align, Baseline, Canvas, Color, FillRule, FontId, ImageFlags, ImageId,
-    LineCap, LineJoin, Paint, Path, Renderer, Solidity, 
+    renderer::OpenGl, Align, Baseline, Color, FillRule, FontId, ImageFlags, ImageId,
+    LineCap, LineJoin, Paint, Path, Renderer, Solidity,
 };
 
 use fnv::FnvHashMap;
@@ -193,14 +192,16 @@ impl EventManager {
         return needs_redraw;
     }
 
-    pub fn draw(&mut self, state: &mut State, hierarchy: &Hierarchy, canvas: &mut Canvas<OpenGl>) {
+
+
+    pub fn draw(&mut self, state: &mut State, hierarchy: &Hierarchy, canvas: &mut RenderCanvas) {
         //let dpi_factor = window.handle.window().scale_factor();
         //let size = window.handle.window().inner_size();
 
         // for (resource, image_or_id) in state.resource_manager.image_ids.iter_mut() {
         //     match image_or_id {
         //         ImageOrId::Image(data, width, height) => {
-        //             image_or_id = 
+        //             image_or_id =
         //         }
         //     }
         // }
@@ -257,6 +258,6 @@ impl EventManager {
         }
 
         // Send the canvas to the GPU to draw
-        canvas.flush(None);
+        //canvas.flush(render_target);
     }
 }

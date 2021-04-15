@@ -67,7 +67,7 @@ pub use crate::mouse::*;
 pub use crate::state::State;
 pub use crate::{Code, Key};
 pub use crate::{PropGet, PropSet, Animation, AnimationState};
-
+use femtovg::renderer::{OpenGl, WGPU};
 
 #[derive(Default)]
 pub struct BaseWidget {
@@ -97,3 +97,8 @@ pub trait BasicWidget: Sized {
         self
     }
 }
+
+#[cfg(feature = "wgpu")]
+pub type RenderCanvas = femtovg::Canvas<WGPU>;
+#[cfg(not(feature = "wgpu"))]
+pub type RenderCanvas = femtovg::Canvas<OpenGl>;
