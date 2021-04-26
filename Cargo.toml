@@ -66,6 +66,6 @@ pollster = { version = "0.2.3", optional = true }
 
 [dev-dependencies]
 image = "0.23.12"
-femtovg = { git = "https://github.com/adamnemecek/femtovg", branch = "master"}
+femtovg = { git = "https://github.com/SonicZentropy/femtovg", branch = "master"}
 #femtovg = { path="../femtovg" }
 

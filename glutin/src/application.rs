@@ -183,7 +183,8 @@ impl Application {
                 GEvent::RedrawRequested(_) => {
                     let hierarchy = state.hierarchy.clone();
                     event_manager.draw(&mut state, &hierarchy, &mut window.canvas);
-	                window.canvas.flush(); //flush canvas here instead of in event_manager because wgpu needs to flush a target
+	                //flush canvas here instead of in event_manager because wgpu needs to flush to swapchain target
+	                window.canvas.flush(None);
                     // Swap buffers
                     window
                         .handle

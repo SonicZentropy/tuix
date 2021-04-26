@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 cssparser = "0.27.2"
-femtovg = { git = "https://github.com/adamnemecek/femtovg", branch = "master"}
+femtovg = { git = "https://github.com/SonicZentropy/femtovg", branch = "master"}
 #femtovg = { path="../../femtovg" }
 keyboard-types = { version = "0.5", default-features = false }
 fnv = "1.0.7"
