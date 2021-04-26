@@ -23,6 +23,7 @@
 use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget};
 use winit::event_loop::EventLoop;
 use crate::window::Window;
+use std::path::Path;
 
 pub struct Application {
 	pub window: Window,
@@ -91,6 +92,7 @@ impl Application {
 		let event_loop = self.event_loop;
 		let event_manager = self.event_manager;
 		let state = self.state;
+
 
 		#[cfg(feature = "wgpu")]
 		let renderer = WgpuRenderer;
