@@ -151,6 +151,7 @@ impl Application {
 				WinitEvent::UserEvent(_) => {
 					window.winit_window.request_redraw();
 				}
+				// test
 				WinitEvent::RedrawRequested(_) => {
 					let now = Instant::now();
 					let dt = (now - prevt).as_secs_f32();
