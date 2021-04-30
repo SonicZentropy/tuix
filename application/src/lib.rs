@@ -1,93 +1,30 @@
-use winit::window::Window;
-use femtovg::renderer::{WGPUInstance, WGPUContext, WGPUSwapChain, WGPU};
-use femtovg::Size;
+//#![feature(stmt_expr_attributes)] // Need this in order to put the #[cfg] around a block and make this look less hell?
+use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, Event, Fonts, Propagation, apply_hover, MouseButton, MouseButtonState, PropSet, Visibility, Display, apply_clipping};
 
-pub struct WGPURenderer {
-	pub renderer: WGPU,
-	pub swap_chain: WGPUSwapChain,
-}
-
-impl WGPURenderer {
-	pub async fn new(window: &Window) -> Self {
-		let winit_size = window.inner_size();
-
-		let instance = WGPUInstance::from_window(window, None ).await.unwrap();
-		let ctx = WGPUContext::new(instance).await.unwrap();
-		let size = Size::new(winit_size.width as _, winit_size.height as _);
-		let mut swap_chain = WGPUSwapChain::new(&ctx, size);
-		let renderer = WGPU::new(&ctx, size, swap_chain.format());
-
-		WGPURenderer {
-			renderer,
-			swap_chain,
-		}
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget,
-                apply_clipping, Fonts, Propagation, MouseButtonState, PropSet, Visibility, Display, apply_hover, MouseButton};
-use tuix_core::Size as TuixSize;
-use winit::dpi::Size as Size;
-
-use winit::{
-	//event::*,
-	event_loop::{ControlFlow, EventLoop},
-};
-
-use winit::event::{Event as WinitEvent, WindowEvent, ElementState, VirtualKeyCode, KeyboardInput};
-
-use crate::window::Window;
-use femtovg::renderer::{WGPUInstance, WGPUContext, WGPUSwapChain, WGPU};
-use femtovg::{Canvas, FontId, ImageFlags, Color, Align, Baseline, ImageId, Paint, Path, Renderer};
-use femtovg::Size as FemtoSize;
-
-use resource::resource;
-
-use tuix_core::event::Event;
-use tuix_core::events::WindowEvent as TuixWindowEvent;
+#[cfg(feature = "wgpu")]
+mod wgpu_cfg;
+#[cfg(feature = "wgpu")]
+use wgpu_cfg::*;
+use tuix_wgpu::application::WGPURenderer;
 use std::time::Instant;
-use crate::keyboard::{vcode_to_code, scan_to_code, vk_to_key};
 
+use femtovg::{Canvas, ImageFlags};
+use tuix_winit::{WinitEvent, VirtualKeyCode, ControlFlow, WindowEvent};
+use tuix_core::events::WindowEvent as TuixWindowEvent;
 
+use tuix_wgpu::{resource, pollster} ;
+mod keyboard;
+use keyboard::{vcode_to_code, scan_to_code, vk_to_key};
+
+pub struct Application {
+	#[cfg(feature = "wgpu")]
+	pub window: Window,
+	#[cfg(feature = "wgpu")]
+	event_loop: EventLoop<()>,
+
+	pub state: State,
+	pub event_manager: EventManager,
+}
 
 
 impl Application {
@@ -141,10 +78,11 @@ impl Application {
 	}
 
 	pub fn run(self) {
-		pollster::block_on(self.run_internal())
+		#[cfg(feature = "wgpu")]
+			pollster::block_on(self.run_internal_wgpu())
 	}
 
-	async fn run_internal(self) {
+	async fn run_internal_wgpu(self) {
 		let mut state = self.state;
 		let mut event_manager = self.event_manager;
 		let mut window = self.window;
@@ -154,13 +92,10 @@ impl Application {
 		state.insert_event(Event::new(TuixWindowEvent::Restyle).target(Entity::root()));
 		state.insert_event(Event::new(TuixWindowEvent::Relayout).target(Entity::root()));
 
-		let size = window.winit_window.inner_size();
+		//let size = window.winit_window.inner_size();
 
-		let instance = WGPUInstance::from_window(&window.winit_window).await.unwrap();
-		let ctx = WGPUContext::new(instance).await.unwrap();
-		let size = FemtoSize::new(size.width as _, size.height as _);
-		let mut swap_chain = WGPUSwapChain::new(&ctx, size);
-		let renderer = WGPU::new(&ctx, size, swap_chain.format());
+		let WGPURenderer {renderer, mut swap_chain} = WGPURenderer::new(&window.winit_window).await;
+
 		let mut canvas = Canvas::new(renderer).expect("Cannot create canvas");
 
 		let fonts = Fonts {
@@ -196,6 +131,7 @@ impl Application {
 
 		//gfx hasn't implemented this for vulkan yet
 		//TODO Fix gfx to implement this because it's awesome
+		//TODO further - wait on nvidia and renderdoc to fix the driver bugs I found bc of this
 		//ctx.device().start_capture();
 
 		// let mut perf = PerfGraph::new();
@@ -275,7 +211,7 @@ impl Application {
 
 					#[cfg(not(target_arch = "wasm32"))]
 					WindowEvent::Resized(physical_size) => {
-						let new_size = FemtoSize::new(physical_size.width as _, physical_size.height as _);
+						let new_size = femtovg::Size::new(physical_size.width as _, physical_size.height as _);
 						canvas.set_size(new_size.w as _, new_size.h as _, 1.0);
 						swap_chain.resize(new_size);
 
@@ -333,7 +269,7 @@ impl Application {
 						device_id: _, delta, ..
 					} => {
 						let (x, y) = match delta {
-							winit::event::MouseScrollDelta::LineDelta(xx, yy) => (xx, yy),
+							tuix_winit::MouseScrollDelta::LineDelta(xx, yy) => (xx, yy),
 							_ => (0.0, 0.0),
 						};
 
@@ -356,15 +292,15 @@ impl Application {
 						..
 					} => {
 						let s = match s {
-							winit::event::ElementState::Pressed => MouseButtonState::Pressed,
-							winit::event::ElementState::Released => MouseButtonState::Released,
+							tuix_winit::ElementState::Pressed => MouseButtonState::Pressed,
+							tuix_winit::ElementState::Released => MouseButtonState::Released,
 						};
 
 						let b = match button {
-							winit::event::MouseButton::Left => MouseButton::Left,
-							winit::event::MouseButton::Right => MouseButton::Right,
-							winit::event::MouseButton::Middle => MouseButton::Middle,
-							winit::event::MouseButton::Other(id) => MouseButton::Other(id),
+							tuix_winit::MouseButton::Left => MouseButton::Left,
+							tuix_winit::MouseButton::Right => MouseButton::Right,
+							tuix_winit::MouseButton::Middle => MouseButton::Middle,
+							tuix_winit::MouseButton::Other(id) => MouseButton::Other(id),
 						};
 
 						match b {
@@ -472,15 +408,15 @@ impl Application {
 						}
 					}
 
-						//wtf happened to this
+					//wtf happened to this
 					WindowEvent::KeyboardInput {
 						device_id: _,
 						input,
 						is_synthetic: _,
 					} => {
 						let s = match input.state {
-							winit::event::ElementState::Pressed => MouseButtonState::Pressed,
-							winit::event::ElementState::Released => MouseButtonState::Released,
+							tuix_winit::ElementState::Pressed => MouseButtonState::Pressed,
+							tuix_winit::ElementState::Released => MouseButtonState::Released,
 						};
 
 						// Prefer virtual keycodes to scancodes, as scancodes aren't uniform between platforms
@@ -665,27 +601,3 @@ impl Application {
 		});
 	}
 }
-
-//fn draw_text<T: Renderer>(canvas: &mut Canvas<T>, fonts: &Fonts, title: &str, x: f32, y: f32, w: f32, h: f32) {
-//	canvas.save();
-//	let mut text_paint = Paint::color(Color::rgba(255, 0, 0, 255));
-//	text_paint.set_font_size(80.0);
-//	text_paint.set_font(&[fonts.regular]);
-//	text_paint.set_text_align(Align::Left);
-//	text_paint.set_text_baseline(Baseline::Middle);
-//	let _ = canvas.fill_text(x + h, y + h * 0.5, title, text_paint);
-//	canvas.restore();
-//}
-//
-//fn draw_image(canvas: &mut Canvas<impl Renderer>, x: f32, y: f32, images: &[ImageId]) {
-//	let (w, h) = canvas.image_size(images[0]).unwrap();
-//
-//	let paint = Paint::image(images[0], x, y, w as f32, h as f32, 0.0, 1.0);
-//	let mut path = Path::new();
-//	path.rect(x, y, w as _, h as _);
-//	canvas.fill_path(&mut path, paint);
-//}
-//
-//
-
-*/

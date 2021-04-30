@@ -26,7 +26,7 @@ type WEvent<'a, T> = winit::event::Event<'a, T>;
 
 use winit::event::VirtualKeyCode;
 
-pub struct Application {
+/*pub struct Application {
     pub window: Window,
     pub state: State,
     event_loop: EventLoop<()>,
@@ -552,3 +552,4 @@ impl Application {
         });
     }
 }
+*/

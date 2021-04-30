@@ -2,10 +2,8 @@ extern crate tuix;
 
 use tuix::*;
 
-#[cfg(feature = "wgpu")]
-use tuix_wgpu::application::Application;
-#[cfg(not(feature = "wgpu"))]
-use tuix::Application;
+
+use tuix_application::Application;
 
 //static THEME: &'static str = include_str!("themes/basic_theme.css");
 

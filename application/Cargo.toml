@@ -1,15 +1,19 @@
 [package]
-name = "tuix_winit"
+name = "tuix_application"
 version = "0.1.0"
-authors = ["George Atkinson", "Billy Messenger <BillyDM@protonmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-raw-gl-context = "0.1"
 tuix_core = { path = "../core" }
-winit = "0.24.0"
+tuix_winit = { path = "../winit"}
+tuix_wgpu = { version = "0.1.0", path = "../wgpu", optional = true }
+tuix_glutin = { version = "0.1.0", path = "../glutin", optional = true }
+
 femtovg = { git = "https://github.com/SonicZentropy/femtovg", branch = "master"}
-#femtovg = { path="../../femtovg" }
 keyboard-types = { version = "0.5", default-features = false }
+
+[features]
+wgpu = ["tuix_wgpu"]
+glutin = ["tuix_glutin"]
