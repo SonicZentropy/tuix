@@ -6,28 +6,30 @@ use crate::keyboard::{scan_to_code, vk_to_key, vcode_to_code};
 
 use crate::window::Window;
 
-use tuix_core::{BoundingBox, Units};
-use tuix_core::{Entity, State};
-
-use tuix_core::state::mouse::{MouseButton, MouseButtonState};
-
-use tuix_core::events::{Event, EventManager, Propagation};
-
-use tuix_core::state::hierarchy::IntoHierarchyIterator;
-
-use tuix_core::state::Fonts;
-
-use tuix_core::style::{Display, Visibility};
-
-use tuix_core::state::style::prop::*;
-
-use tuix_core::{WindowEvent, WindowWidget, WindowBuilder};
-
-use tuix_core::systems::*;
+use tuix_core::{
+	events::{Event, EventManager, Propagation},
+	Entity,
+	State,
+	BoundingBox,
+	Units,
+	state::mouse::{MouseButton, MouseButtonState},
+	state::hierarchy::IntoHierarchyIterator,
+	state::Fonts,
+	state::style::prop::*,
+	style::{Display, Visibility},
+	WindowEvent,
+	WindowWidget,
+	WindowBuilder,
+	systems::*
+};
 
 use glutin::event::VirtualKeyCode;
 
 type GEvent<'a, T> = glutin::event::Event<'a, T>;
+
+pub struct GlutinRenderer {
+
+}
 
 pub struct Application {
     pub window: Window,
@@ -37,7 +39,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn new<F: FnOnce(&mut State, &mut WindowBuilder)>(
+    /*pub fn new<F: FnOnce(&mut State, &mut WindowBuilder)>(
         app: F,
     ) -> Self {
         let event_loop = EventLoop::new();
@@ -120,7 +122,7 @@ impl Application {
             event_manager: event_manager,
             state: state,
         }
-    }
+    }*/
 
     pub fn run(self) {
         let mut state = self.state;

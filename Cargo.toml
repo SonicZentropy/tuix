@@ -52,7 +52,7 @@ default = ["wgpu"]
 winit = ["tuix_winit"]
 glutin = ["tuix_glutin", "tuix_application/glutin"]
 baseview = ["tuix_baseview"]
-wgpu = ["tuix_wgpu", "tuix_core/wgpu", "pollster", "tuix_application/wgpu" ]
+wgpu = ["tuix_wgpu", "tuix_core/wgpu", "tuix_application/wgpu" ]
 
 [dependencies]
 tuix_core = { version = "0.1.0", path = "core" }
@@ -64,7 +64,7 @@ tuix_wgpu = { version = "0.1.0", path = "wgpu", optional = true}
 
 tuix_inspector_derive = {path = "inspector-derive"}
 
-pollster = { version = "0.2.3", optional = true }
+pollster = { version = "0.2.3" }
 
 [dev-dependencies]
 image = "0.23.12"

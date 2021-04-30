@@ -4,4 +4,4 @@ use femtovg::renderer::WGPU;
 
 pub type RenderCanvas = femtovg::Canvas<WGPU>;
 
-pub use tuix_winit::WinitEvent;
+pub type WinitEvent<'a, T> = glutin::event::Event<'a, T>;

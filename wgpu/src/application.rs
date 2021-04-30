@@ -2,13 +2,15 @@ use winit::window::Window;
 use femtovg::renderer::{WGPUInstance, WGPUContext, WGPUSwapChain, WGPU};
 use femtovg::Size;
 
+use femtovg::Canvas;
+
 pub struct WGPURenderer {
-	pub renderer: WGPU,
+	pub canvas: femtovg::Canvas<WGPU>,
 	pub swap_chain: WGPUSwapChain,
 }
 
 impl WGPURenderer {
-	pub async fn new(window: &Window) -> Self {
+	pub async fn create_renderer(window: &Window) -> Self {
 		let winit_size = window.inner_size();
 
 		let instance = WGPUInstance::from_window(window, None ).await.unwrap();
@@ -16,9 +18,11 @@ impl WGPURenderer {
 		let size = Size::new(winit_size.width as _, winit_size.height as _);
 		let mut swap_chain = WGPUSwapChain::new(&ctx, size);
 		let renderer = WGPU::new(&ctx, size, swap_chain.format());
+		let canvas = Canvas::new(renderer).expect("Cannot create canvas.");
+
 
 		WGPURenderer {
-			renderer,
+			canvas,
 			swap_chain,
 		}
 	}

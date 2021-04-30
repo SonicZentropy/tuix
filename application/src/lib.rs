@@ -5,27 +5,28 @@ use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, E
 mod wgpu_cfg;
 #[cfg(feature = "wgpu")]
 use wgpu_cfg::*;
+#[cfg(feature = "glutin")]
+mod glutin_cfg;
+#[cfg(feature = "glutin")]
+use glutin_cfg::*;
 use tuix_wgpu::application::WGPURenderer;
 use std::time::Instant;
 
 use femtovg::{Canvas, ImageFlags};
-use tuix_winit::{WinitEvent, VirtualKeyCode, ControlFlow, WindowEvent};
+use tuix_winit::{VirtualKeyCode, ControlFlow, WindowEvent};
 use tuix_core::events::WindowEvent as TuixWindowEvent;
 
 use tuix_wgpu::{resource, pollster} ;
 mod keyboard;
 use keyboard::{vcode_to_code, scan_to_code, vk_to_key};
+use femtovg::renderer::{WGPUSwapChain, WGPU};
 
 pub struct Application {
-	#[cfg(feature = "wgpu")]
 	pub window: Window,
-	#[cfg(feature = "wgpu")]
 	event_loop: EventLoop<()>,
-
 	pub state: State,
 	pub event_manager: EventManager,
 }
-
 
 impl Application {
 	pub fn new<F: FnOnce(&mut State, &mut tuix_core::WindowBuilder)>(
@@ -42,6 +43,7 @@ impl Application {
 		let mut tuix_window_builder = tuix_core::WindowBuilder::new(root);
 		app(&mut state, &mut tuix_window_builder);
 		let window_description = tuix_window_builder.get_window_description();
+
 		let window = Window::new(&event_loop, window_description);
 
 		state.style.width.insert(
@@ -78,11 +80,11 @@ impl Application {
 	}
 
 	pub fn run(self) {
-		#[cfg(feature = "wgpu")]
-			pollster::block_on(self.run_internal_wgpu())
+		//glutin doesn't need this, but it also doesn't hurt, and makes things easier on wgpu
+		pollster::block_on(self.run_internal())
 	}
 
-	async fn run_internal_wgpu(self) {
+	async fn run_internal(self) {
 		let mut state = self.state;
 		let mut event_manager = self.event_manager;
 		let mut window = self.window;
@@ -92,11 +94,10 @@ impl Application {
 		state.insert_event(Event::new(TuixWindowEvent::Restyle).target(Entity::root()));
 		state.insert_event(Event::new(TuixWindowEvent::Relayout).target(Entity::root()));
 
-		//let size = window.winit_window.inner_size();
-
-		let WGPURenderer {renderer, mut swap_chain} = WGPURenderer::new(&window.winit_window).await;
-
-		let mut canvas = Canvas::new(renderer).expect("Cannot create canvas");
+		#[cfg(feature = "wgpu")]
+		let (mut canvas, mut swap_chain) = Application::create_renderer(&window).await;
+		#[cfg(feature = "glutin")]
+		let mut canvas = &window.canvas;
 
 		let fonts = Fonts {
 			regular: Some(canvas
@@ -599,5 +600,13 @@ impl Application {
 				*control_flow = ControlFlow::Exit;
 			}
 		});
+	}
+
+	async fn create_renderer(window: &Window) -> (Canvas<WGPU>, WGPUSwapChain) {
+		#[cfg(feature = "wgpu")]
+		let WGPURenderer { mut canvas, mut swap_chain } = WGPURenderer::create_renderer(&window.winit_window).await;
+
+		//#[cfg(feature = "glutin")]
+		(canvas, swap_chain)
 	}
 }
