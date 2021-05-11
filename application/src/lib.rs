@@ -93,11 +93,7 @@ impl Application {
 		state.insert_event(Event::new(TuixWindowEvent::Restyle).target(Entity::root()));
 		state.insert_event(Event::new(TuixWindowEvent::Relayout).target(Entity::root()));
 
-		//#[cfg(feature = "wgpu")]
 		let mut renderer: BackendRenderer = create_renderer(&window).await;
-		//let WGPURenderer { mut canvas, mut swap_chain } = WGPURenderer::create_renderer(&window.winit_window).await;
-		//#[cfg(feature = "glutin")]
-		//let mut canvas = &window.canvas;
 
 		let fonts = Fonts {
 			regular: Some(renderer.canvas
@@ -159,13 +155,13 @@ impl Application {
 					let dpi_factor = window.winit_window.scale_factor();
 					let size = window.winit_window.inner_size();
 
-					let frame = renderer.swap_chain.get_current_frame().unwrap();
-					let target = &frame.output.view;
-
+					//Update tuix internals
 					let hierarchy = state.hierarchy.clone();
 					event_manager.draw(&mut state, &hierarchy, &mut renderer.canvas);
 
-					renderer.canvas.flush(Some(target));
+					//Submit frame to GPU
+					renderer.submit_render();
+
 					frame_count += 1;
 				}
 

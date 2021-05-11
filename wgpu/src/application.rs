@@ -27,6 +27,13 @@ impl WGPURenderer {
 			swap_chain,
 		}
 	}
+
+	pub fn submit_render(&mut self) {
+		let frame = self.swap_chain.get_current_frame().unwrap();
+		let target = &frame.output.view;
+
+		self.canvas.flush(Some(target));
+	}
 }
 
 // these r so fuckin tiny from my screen
