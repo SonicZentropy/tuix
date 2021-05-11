@@ -9,17 +9,16 @@ use wgpu_cfg::*;
 mod glutin_cfg;
 #[cfg(feature = "glutin")]
 use glutin_cfg::*;
-use tuix_wgpu::application::WGPURenderer;
+
 use std::time::Instant;
 
 use femtovg::{Canvas, ImageFlags};
 use tuix_winit::{VirtualKeyCode, ControlFlow, WindowEvent};
 use tuix_core::events::WindowEvent as TuixWindowEvent;
 
-use tuix_wgpu::{resource, pollster} ;
 mod keyboard;
 use keyboard::{vcode_to_code, scan_to_code, vk_to_key};
-use femtovg::renderer::{WGPUSwapChain, WGPU};
+
 
 pub struct Application {
 	pub window: Window,
@@ -87,28 +86,29 @@ impl Application {
 	async fn run_internal(self) {
 		let mut state = self.state;
 		let mut event_manager = self.event_manager;
-		let mut window = self.window;
+		let window = self.window;
 
 		let mut should_quit = false;
 
 		state.insert_event(Event::new(TuixWindowEvent::Restyle).target(Entity::root()));
 		state.insert_event(Event::new(TuixWindowEvent::Relayout).target(Entity::root()));
 
-		#[cfg(feature = "wgpu")]
-		let (mut canvas, mut swap_chain) = Application::create_renderer(&window).await;
-		#[cfg(feature = "glutin")]
-		let mut canvas = &window.canvas;
+		//#[cfg(feature = "wgpu")]
+		let mut renderer: BackendRenderer = create_renderer(&window).await;
+		//let WGPURenderer { mut canvas, mut swap_chain } = WGPURenderer::create_renderer(&window.winit_window).await;
+		//#[cfg(feature = "glutin")]
+		//let mut canvas = &window.canvas;
 
 		let fonts = Fonts {
-			regular: Some(canvas
+			regular: Some(renderer.canvas
 				.add_font_mem(&resource!("../examples/assets/Roboto-Regular.ttf"))
 				.expect("Cannot add font")
 			),
-			bold: Some(canvas
+			bold: Some(renderer.canvas
 				.add_font_mem(&resource!("../examples/assets/Roboto-Light.ttf"))
 				.expect("Cannot add font")
 			),
-			icons: Some(canvas
+			icons: Some(renderer.canvas
 				.add_font_mem(&resource!("../examples/assets/entypo.ttf"))
 				.expect("Cannot add font")
 			),
@@ -117,7 +117,7 @@ impl Application {
 
 		state.fonts = fonts;
 
-		let image = canvas
+		let image = renderer.canvas
 			.load_image_mem(&resource!("../examples/assets/images/image4.jpg"), ImageFlags::empty())
 			.unwrap();
 
@@ -126,9 +126,9 @@ impl Application {
 		let start = Instant::now();
 		let mut prevt = start;
 
-		let mut mousex = 0.0;
-		let mut mousey = 0.0;
-		let mut dragging = false;
+		let mousex = 0.0;
+		let mousey = 0.0;
+		let dragging = false;
 
 		//gfx hasn't implemented this for vulkan yet
 		//TODO Fix gfx to implement this because it's awesome
@@ -139,7 +139,7 @@ impl Application {
 
 		let mut frame_count = 0;
 
-		let mut event_loop_proxy = self.event_loop.create_proxy();
+		let event_loop_proxy = self.event_loop.create_proxy();
 		state.needs_redraw = true;
 
 		self.event_loop.run(move |event, _, control_flow| {
@@ -151,7 +151,6 @@ impl Application {
 				WinitEvent::UserEvent(_) => {
 					window.winit_window.request_redraw();
 				}
-				// test
 				WinitEvent::RedrawRequested(_) => {
 					let now = Instant::now();
 					let dt = (now - prevt).as_secs_f32();
@@ -160,13 +159,13 @@ impl Application {
 					let dpi_factor = window.winit_window.scale_factor();
 					let size = window.winit_window.inner_size();
 
-					let frame = swap_chain.get_current_frame().unwrap();
+					let frame = renderer.swap_chain.get_current_frame().unwrap();
 					let target = &frame.output.view;
 
 					let hierarchy = state.hierarchy.clone();
-					event_manager.draw(&mut state, &hierarchy, &mut canvas);
+					event_manager.draw(&mut state, &hierarchy, &mut renderer.canvas);
 
-					canvas.flush(Some(target));
+					renderer.canvas.flush(Some(target));
 					frame_count += 1;
 				}
 
@@ -214,8 +213,8 @@ impl Application {
 					#[cfg(not(target_arch = "wasm32"))]
 					WindowEvent::Resized(physical_size) => {
 						let new_size = femtovg::Size::new(physical_size.width as _, physical_size.height as _);
-						canvas.set_size(new_size.w as _, new_size.h as _, 1.0);
-						swap_chain.resize(new_size);
+						renderer.canvas.set_size(new_size.w as _, new_size.h as _, 1.0);
+						renderer.swap_chain.resize(new_size);
 
 						state
 							.style
@@ -603,11 +602,4 @@ impl Application {
 		});
 	}
 
-	async fn create_renderer(window: &Window) -> (Canvas<WGPU>, WGPUSwapChain) {
-		#[cfg(feature = "wgpu")]
-		let WGPURenderer { mut canvas, mut swap_chain } = WGPURenderer::create_renderer(&window.winit_window).await;
-
-		//#[cfg(feature = "glutin")]
-		(canvas, swap_chain)
-	}
 }

@@ -3,9 +3,10 @@ use femtovg::renderer::{WGPUInstance, WGPUContext, WGPUSwapChain, WGPU};
 use femtovg::Size;
 
 use femtovg::Canvas;
+type RenderCanvas = femtovg::Canvas<WGPU>;
 
 pub struct WGPURenderer {
-	pub canvas: femtovg::Canvas<WGPU>,
+	pub canvas: RenderCanvas,
 	pub swap_chain: WGPUSwapChain,
 }
 
@@ -28,9 +29,9 @@ impl WGPURenderer {
 	}
 }
 
-
-
-
+// these r so fuckin tiny from my screen
+// no latency tho :sob: :tada:
+// :sob:
 
 
 

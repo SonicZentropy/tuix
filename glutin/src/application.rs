@@ -39,7 +39,7 @@ pub struct Application {
 }
 
 impl Application {
-    /*pub fn new<F: FnOnce(&mut State, &mut WindowBuilder)>(
+    pub fn new<F: FnOnce(&mut State, &mut WindowBuilder)>(
         app: F,
     ) -> Self {
         let event_loop = EventLoop::new();
@@ -122,7 +122,7 @@ impl Application {
             event_manager: event_manager,
             state: state,
         }
-    }*/
+    }
 
     pub fn run(self) {
         let mut state = self.state;
