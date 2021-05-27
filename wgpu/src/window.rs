@@ -5,6 +5,8 @@ use winit::{
 };
 use tuix_core::WindowDescription;
 use winit::dpi::PhysicalSize;
+
+#[cfg(target_os="windows")]
 use winit::platform::windows::WindowBuilderExtWindows;
 
 
