@@ -5,6 +5,7 @@ use winit::{
 };
 use tuix_core::WindowDescription;
 use winit::dpi::PhysicalSize;
+use winit::platform::windows::WindowBuilderExtWindows;
 
 
 pub struct Window {
@@ -20,6 +21,8 @@ impl Window {
 		let winit_window = winit::window::WindowBuilder::new()
 			.with_inner_size(size)
 			.with_title("tuix wgpu demo")
+			// This is forced off because it breaks Windows
+			.with_drag_and_drop(false)
 			.build(events_loop)
 			.expect("Couldn't build winit window");
 
