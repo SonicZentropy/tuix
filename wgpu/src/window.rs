@@ -1,10 +1,7 @@
 use winit::{
-	event::*,
-	event_loop::{ControlFlow, EventLoop},
-	window::WindowBuilder,
+	event_loop::{ EventLoop },
 };
 use tuix_core::WindowDescription;
-use winit::dpi::PhysicalSize;
 
 #[cfg(target_os="windows")]
 use winit::platform::windows::WindowBuilderExtWindows;

@@ -4,10 +4,10 @@ pub use tuix_wgpu::application::WGPURenderer;
 pub use tuix_wgpu::{resource, pollster} ;
 
 pub use tuix_winit::WinitEvent;
-use femtovg::Canvas;
-use femtovg::renderer::{WGPU};
+//use femtovg::Canvas;
+//use femtovg::renderer::{WGPU};
 
-pub type RenderCanvas = femtovg::Canvas<WGPU>;
+//pub type RenderCanvas = femtovg::Canvas<WGPU>;
 pub type BackendRenderer = WGPURenderer;
 
 pub async fn create_renderer(window: &Window) -> BackendRenderer {

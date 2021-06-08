@@ -17,7 +17,7 @@ impl WGPURenderer {
 		let instance = WGPUInstance::from_window(window, None ).await.unwrap();
 		let ctx = WGPUContext::new(instance).await.unwrap();
 		let size = Size::new(winit_size.width as _, winit_size.height as _);
-		let mut swap_chain = WGPUSwapChain::new(&ctx, size);
+		let swap_chain = WGPUSwapChain::new(&ctx, size);
 		let renderer = WGPU::new(&ctx, size, swap_chain.format());
 		let canvas = Canvas::new(renderer).expect("Cannot create canvas.");
 

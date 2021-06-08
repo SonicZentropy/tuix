@@ -12,7 +12,7 @@ use glutin_cfg::*;
 
 use std::time::Instant;
 
-use femtovg::{Canvas, ImageFlags};
+use femtovg::{ImageFlags};
 use tuix_winit::{VirtualKeyCode, ControlFlow, WindowEvent};
 use tuix_core::events::WindowEvent as TuixWindowEvent;
 
@@ -113,7 +113,7 @@ impl Application {
 
 		state.fonts = fonts;
 
-		let image = renderer.canvas
+		let _image = renderer.canvas
 			.load_image_mem(&resource!("../examples/assets/images/image4.jpg"), ImageFlags::empty())
 			.unwrap();
 
@@ -122,9 +122,9 @@ impl Application {
 		let start = Instant::now();
 		let mut prevt = start;
 
-		let mousex = 0.0;
-		let mousey = 0.0;
-		let dragging = false;
+		let _mousex = 0.0;
+		let _mousey = 0.0;
+		let _dragging = false;
 
 		//gfx hasn't implemented this for vulkan yet
 		//TODO Fix gfx to implement this because it's awesome
@@ -133,7 +133,7 @@ impl Application {
 
 		// let mut perf = PerfGraph::new();
 
-		let mut frame_count = 0;
+		//let mut frame_count = 0;
 
 		let event_loop_proxy = self.event_loop.create_proxy();
 		state.needs_redraw = true;
@@ -149,11 +149,11 @@ impl Application {
 				}
 				WinitEvent::RedrawRequested(_) => {
 					let now = Instant::now();
-					let dt = (now - prevt).as_secs_f32();
+					let _dt = (now - prevt).as_secs_f32();
 					prevt = now;
 
-					let dpi_factor = window.winit_window.scale_factor();
-					let size = window.winit_window.inner_size();
+					let _dpi_factor = window.winit_window.scale_factor();
+					let _size = window.winit_window.inner_size();
 
 					//Update tuix internals
 					let hierarchy = state.hierarchy.clone();
@@ -162,7 +162,7 @@ impl Application {
 					//Submit frame to GPU
 					renderer.submit_render();
 
-					frame_count += 1;
+					//frame_count += 1;
 				}
 
 				WinitEvent::WindowEvent { event, .. } => match event {

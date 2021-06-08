@@ -1,6 +1,7 @@
 use winit::event::VirtualKeyCode;
 use keyboard_types::{Code, Key};
 
+#[allow(dead_code)]
 pub fn vcode_to_code(code: VirtualKeyCode) -> Code {
 	use Code::*;
 	match code {
@@ -100,6 +101,7 @@ pub fn vcode_to_code(code: VirtualKeyCode) -> Code {
 	}
 }
 
+#[allow(dead_code)]
 pub fn scan_to_code(scan_code: u32) -> Code {
 	use Code::*;
 	match scan_code {
@@ -243,6 +245,7 @@ pub fn scan_to_code(scan_code: u32) -> Code {
 	}
 }
 
+#[allow(dead_code)]
 pub fn vk_to_key(vk: VirtualKeyCode) -> Option<Key> {
 	Some(match vk {
 		VirtualKeyCode::Back => Key::Backspace,

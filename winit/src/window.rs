@@ -15,6 +15,7 @@ pub struct Window {
 }
 
 impl Window {
+	#[allow(dead_code)]
     pub fn new(events_loop: &EventLoop<()>, window_description: &WindowDescription) -> Self {
         let window_builder = WindowBuilder::new()
             .with_title(&window_description.title)
