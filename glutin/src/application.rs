@@ -278,13 +278,13 @@ impl Application {
                                     state.reload_styles().unwrap();
                                 }
 
-                                if virtual_keycode == VirtualKeyCode::H && s == MouseButtonState::Pressed {
-                                    println!("Hierarchy");
-                                    for entity in state.hierarchy.into_iter() {
-                                        //println!("Entity: {}  Parent: {:?} FC: {:?} NS: {:?}", entity, state.hierarchy.get_parent(entity), state.hierarchy.get_first_child(entity), state.hierarchy.get_next_sibling(entity));
-                                        println!("Entity: {} posx: {} posy: {} width: {} height: {} visibility: {:?}", entity, state.data.get_posx(entity), state.data.get_posy(entity), state.data.get_width(entity), state.data.get_height(entity), state.data.get_visibility(entity));
-                                    }
-                                }
+                                //if virtual_keycode == VirtualKeyCode::H && s == MouseButtonState::Pressed {
+                                //    println!("Hierarchy");
+                                //    for entity in state.hierarchy.into_iter() {
+                                //        //println!("Entity: {}  Parent: {:?} FC: {:?} NS: {:?}", entity, state.hierarchy.get_parent(entity), state.hierarchy.get_first_child(entity), state.hierarchy.get_next_sibling(entity));
+                                //        println!("Entity: {} posx: {} posy: {} width: {} height: {} visibility: {:?}", entity, state.data.get_posx(entity), state.data.get_posy(entity), state.data.get_width(entity), state.data.get_height(entity), state.data.get_visibility(entity));
+                                //    }
+                                //}
 
                                 if virtual_keycode == VirtualKeyCode::Tab
                                     && s == MouseButtonState::Pressed
