@@ -1,5 +1,5 @@
 //#![feature(stmt_expr_attributes)] // Need this in order to put the #[cfg] around a block and make this look less hell?
-use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, Event, Fonts, Propagation, apply_hover, MouseButton, MouseButtonState, PropSet, Visibility, Display, apply_clipping};
+use tuix_core::{State, EventManager, Entity, Units, BoundingBox, WindowWidget, Event, Fonts, Propagation, apply_hover, MouseButton, MouseButtonState, PropSet, Visibility, Display, apply_clipping, Size, WindowDescription};
 
 #[cfg(feature = "wgpu")]
 mod wgpu_cfg;
@@ -30,6 +30,8 @@ pub struct Application {
 impl Application {
 	pub fn new<F: FnOnce(&mut State, &mut tuix_core::WindowBuilder)>(
 		app: F,
+		window_width: Option<u32>,
+		window_height: Option<u32>,
 	) -> Self {
 		let event_loop = EventLoop::new();
 		let mut state = State::new();
@@ -41,9 +43,21 @@ impl Application {
 
 		let mut tuix_window_builder = tuix_core::WindowBuilder::new(root);
 		app(&mut state, &mut tuix_window_builder);
-		let window_description = tuix_window_builder.get_window_description();
 
-		let window = Window::new(&event_loop, window_description);
+
+
+		let mut new_width = tuix_window_builder.get_window_description().inner_size.width;
+		let mut new_height = tuix_window_builder.get_window_description().inner_size.height;
+		if window_width.is_some() {
+			new_width = window_width.unwrap();
+		}
+		if window_height.is_some() {
+			new_height = window_height.unwrap();
+		}
+
+		let mut window_description: WindowDescription = WindowDescription::new().with_inner_size(new_width, new_height);
+
+		let window = Window::new(&event_loop, &window_description);
 
 		state.style.width.insert(
 			Entity::root(),
