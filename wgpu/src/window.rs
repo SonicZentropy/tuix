@@ -26,7 +26,7 @@ impl Window {
 
 		let winit_window = builder
 			.with_inner_size(size)
-			.with_title("tuix wgpu demo")
+			.with_title("Ravetable")
 			// This is forced off because it breaks Windows
 			.build(events_loop)
 			.expect("Couldn't build winit window");
